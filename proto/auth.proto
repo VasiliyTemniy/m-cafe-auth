@@ -1,0 +1,49 @@
+syntax = "proto3";
+package auth;
+option go_package = "m-cafe-auth/proto";
+
+service AuthService {
+  rpc CreateAuth (CreateAuthRequest) returns (CreateAuthResponse);
+  rpc UpdateAuth (UpdateAuthRequest) returns (UpdateAuthResponse);
+  rpc DeleteAuth (DeleteAuthRequest) returns (DeleteAuthResponse);
+  rpc CompareAuth (CompareAuthRequest) returns (CompareAuthResponse);
+}
+
+message CreateAuthRequest {
+  int64 id = 1;
+  string lookupHash = 2;
+  string password = 3;
+}
+
+message CreateAuthResponse {
+  bool success = 1;
+  string token = 2;
+}
+
+message UpdateAuthRequest {
+  int64 id = 1;
+  string lookupHash = 2;
+  string password = 3;
+}
+
+message UpdateAuthResponse {
+  bool success = 1;
+  string token = 2;
+}
+
+message DeleteAuthRequest {
+  string lookupHash = 1;
+}
+
+message DeleteAuthResponse {
+  bool success = 1;
+}
+
+message CompareAuthRequest {
+  string lookupHash = 1;
+  string password = 2;
+}
+
+message CompareAuthResponse {
+  bool isMatch = 1;
+}
