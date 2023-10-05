@@ -3,47 +3,47 @@ package auth;
 option go_package = "m-cafe-auth/proto";
 
 service AuthService {
-  rpc CreateAuth (CreateAuthRequest) returns (CreateAuthResponse);
-  rpc UpdateAuth (UpdateAuthRequest) returns (UpdateAuthResponse);
+  rpc CreateAuth (AuthRequest) returns (AuthResponse);
+  rpc UpdateAuth (UpdateAuthRequest) returns (AuthResponse);
   rpc DeleteAuth (DeleteAuthRequest) returns (DeleteAuthResponse);
-  rpc CompareAuth (CompareAuthRequest) returns (CompareAuthResponse);
+  rpc CompareAuth (AuthRequest) returns (AuthResponse);
+  rpc VerifyToken (TokenRequest) returns (AuthResponse);
+  rpc RefreshToken (TokenRequest) returns (AuthResponse);
 }
 
-message CreateAuthRequest {
+
+// Requests
+
+message AuthRequest {
   int64 id = 1;
   string lookupHash = 2;
   string password = 3;
-}
-
-message CreateAuthResponse {
-  bool success = 1;
-  string token = 2;
 }
 
 message UpdateAuthRequest {
   int64 id = 1;
   string lookupHash = 2;
-  string password = 3;
-}
-
-message UpdateAuthResponse {
-  bool success = 1;
-  string token = 2;
+  string oldPassword = 3;
+  string newPassword = 4;
 }
 
 message DeleteAuthRequest {
   string lookupHash = 1;
 }
 
+message TokenRequest {
+  string token = 1;
+}
+
+
+// Responses
+
+message AuthResponse {
+  int64 id = 1;
+  string token = 2;
+  string error = 3;
+}
+
 message DeleteAuthResponse {
-  bool success = 1;
-}
-
-message CompareAuthRequest {
-  string lookupHash = 1;
-  string password = 2;
-}
-
-message CompareAuthResponse {
-  bool isMatch = 1;
+  string error = 1;
 }
