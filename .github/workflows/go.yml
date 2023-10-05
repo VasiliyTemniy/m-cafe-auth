@@ -10,20 +10,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-docker:
+  build-docker-test:
     runs-on: ubuntu-20.04
     environment: testing_env
     steps:
     - uses: actions/checkout@v3
 
-    - name: Build docker image and start container via docker compose
-      run: docker compose -f docker-compose.yml -p simple_micro_auth up
-
-    - nane: Shut down containers
-      run: docker compose -f docker-compose.yml -p simple_micro_auth down
+    - name: Build docker image
+      run: docker build .
 
 
-  build-test:
+  app-test:
     runs-on: ubuntu-20.04
     environment: testing_env
     services:
@@ -48,7 +45,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.20'
+        go-version: '1.21.1'
 
     - name: Build
       run: go build ./src/main.go
@@ -56,14 +53,14 @@ jobs:
     - name: Test
       run: go test ./src/tests
       env:
-        GO_ENV=test
-        DOCKERIZED=true
-        TEST_DATABASE_HOST=127.0.0.1
-        TEST_DATABASE_PORT=5432
-        TEST_DATABASE_USER=postgres_user
-        TEST_DATABASE_PASSWORD=postgres_password
-        TEST_DATABASE_DBNAME=postgres_db
-        TEST_DATABASE_SSLMODE=disable
-        TEST_JWT_SECRET=${{ secrets.TEST_JWT_SECRET }}
-        TEST_JWT_TTL=${{ vars.JWT_TTL }}
-        PORT=${{ vars.PORT }}
+        GO_ENV: test
+        DOCKERIZED: true
+        TEST_DATABASE_HOST: 127.0.0.1
+        TEST_DATABASE_PORT: 5432
+        TEST_DATABASE_USER: postgres_user
+        TEST_DATABASE_PASSWORD: postgres_password
+        TEST_DATABASE_DBNAME: postgres_db_github
+        TEST_DATABASE_SSLMODE: disable
+        TEST_JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+        TEST_JWT_TTL: ${{ vars.JWT_TTL }}
+        PORT: ${{ vars.PORT }}

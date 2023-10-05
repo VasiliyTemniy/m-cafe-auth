@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	EnvDockerized     string
 	EnvJWTSecret      string
 	EnvJWTExpiration  time.Duration
 	EnvBcryptCost     int
@@ -33,9 +34,9 @@ func init() {
 
 	var err error
 
-	dockerized := os.Getenv("DOCKERIZED")
+	EnvDockerized = os.Getenv("DOCKERIZED")
 
-	if dockerized != "true" {
+	if EnvDockerized != "true" {
 		err = loadEnv()
 		if err != nil {
 			log.Fatal(err)

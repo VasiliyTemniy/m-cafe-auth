@@ -21,7 +21,15 @@ func TestMain(t *testing.T) {
 		server.RunServer()
 	}()
 
-	listenPort := fmt.Sprintf("127.0.0.1:%s", configs.EnvPort)
+	var host string
+
+	if configs.EnvDockerized == "true" {
+		host = "0.0.0.0"
+	} else {
+		host = "127.0.0.1"
+	}
+
+	listenPort := fmt.Sprintf("%s:%s", host, configs.EnvPort)
 
 	// Send gRPC message to that server
 	conn, err := grpc.Dial(listenPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
