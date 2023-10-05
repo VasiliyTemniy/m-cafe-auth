@@ -1,6 +1,6 @@
 syntax = "proto3";
 package auth;
-option go_package = "m-cafe-auth/proto";
+option go_package = "simple-micro-auth/proto";
 
 service AuthService {
   rpc CreateAuth (AuthRequest) returns (AuthResponse);

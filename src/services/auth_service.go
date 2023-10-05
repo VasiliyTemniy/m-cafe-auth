@@ -2,9 +2,9 @@ package services
 
 import (
 	"context"
-	c "m-cafe-auth/src/configs"
-	m "m-cafe-auth/src/models"
-	pb "m-cafe-auth/src/proto"
+	c "simple-micro-auth/src/configs"
+	m "simple-micro-auth/src/models"
+	pb "simple-micro-auth/src/proto"
 	"time"
 )
 

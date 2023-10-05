@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	c "m-cafe-auth/src/configs"
-	m "m-cafe-auth/src/models"
 	"math/rand"
+	c "simple-micro-auth/src/configs"
+	m "simple-micro-auth/src/models"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"

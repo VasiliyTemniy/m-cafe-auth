@@ -2,7 +2,7 @@ package tests
 
 import (
 	"fmt"
-	s "m-cafe-auth/src/services"
+	s "simple-micro-auth/src/services"
 	"testing"
 )
 

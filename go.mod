@@ -1,4 +1,4 @@
-module m-cafe-auth
+module simple-micro-auth
 
 go 1.21.1
 

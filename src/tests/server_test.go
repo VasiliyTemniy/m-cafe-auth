@@ -3,10 +3,10 @@ package tests
 import (
 	"context"
 	"fmt"
-	"m-cafe-auth/src/server"
+	"simple-micro-auth/src/server"
 	"testing"
 
-	pb "m-cafe-auth/src/proto"
+	pb "simple-micro-auth/src/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

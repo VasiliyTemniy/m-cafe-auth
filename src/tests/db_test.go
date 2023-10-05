@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	c "m-cafe-auth/src/configs"
-	m "m-cafe-auth/src/models"
-	s "m-cafe-auth/src/services"
+	c "simple-micro-auth/src/configs"
+	m "simple-micro-auth/src/models"
+	s "simple-micro-auth/src/services"
 	"testing"
 )
 

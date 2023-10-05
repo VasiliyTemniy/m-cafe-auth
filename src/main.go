@@ -1,7 +1,7 @@
 package main
 
 import (
-	"m-cafe-auth/src/server"
+	"simple-micro-auth/src/server"
 )
 
 func main() {

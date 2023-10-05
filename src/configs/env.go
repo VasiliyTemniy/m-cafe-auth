@@ -18,7 +18,7 @@ var (
 	EnvPostgresConfig PostgresConfig
 )
 
-const projectDirName = "m-cafe-auth"
+const projectDirName = "simple-micro-auth"
 
 type PostgresConfig struct {
 	Host     string

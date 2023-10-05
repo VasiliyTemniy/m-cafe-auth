@@ -5,9 +5,9 @@ import (
 	"log"
 	"net"
 
-	"m-cafe-auth/src/configs"
-	pb "m-cafe-auth/src/proto"
-	"m-cafe-auth/src/services"
+	"simple-micro-auth/src/configs"
+	pb "simple-micro-auth/src/proto"
+	"simple-micro-auth/src/services"
 
 	"google.golang.org/grpc"
 )

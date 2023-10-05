@@ -2,9 +2,9 @@ package services
 
 import (
 	"fmt"
-	c "m-cafe-auth/src/configs"
-	m "m-cafe-auth/src/models"
 	"math/rand"
+	c "simple-micro-auth/src/configs"
+	m "simple-micro-auth/src/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
