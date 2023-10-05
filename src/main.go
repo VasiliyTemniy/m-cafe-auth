@@ -13,12 +13,14 @@ import (
 )
 
 func main() {
-	listenPort := fmt.Sprintf("[::1]:%s", configs.EnvPort())
+	listenPort := fmt.Sprintf("[::1]:%s", configs.EnvPort)
 
 	lis, err := net.Listen("tcp", listenPort)
 
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
+	} else {
+		fmt.Println("Listening on " + listenPort)
 	}
 
 	grpcServer := grpc.NewServer()
