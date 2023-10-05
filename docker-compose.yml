@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+
+  auth:
+    image: simple-micro-auth
+    build:
+      context: .
+    container_name: simple-micro-auth
+    ports:
+      - 4006:4006
+    env_file:
+      - .docker.env.example
+    depends_on:
+      - postgres_db
+
+  postgres_db:
+    image: postgres:15.3-alpine3.18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vasuser
+      POSTGRES_PASSWORD: crapassword
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: auth
+    container_name: simple-micro-auth-db
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
