@@ -18,19 +18,6 @@ jobs:
 
     - name: Build docker image and start container via docker compose
       run: docker compose -f docker-compose.yml -p simple_micro_auth up
-      env:
-        GO_ENV=prod
-        DOCKERIZED=true
-        # Keep these below in sync with docker-compose postgres_db config
-        DATABASE_HOST=postgres_db
-        DATABASE_PORT=5432
-        DATABASE_USER=vasuser
-        DATABASE_PASSWORD=crapassword
-        DATABASE_DBNAME=auth
-        DATABASE_SSLMODE=disable
-        JWT_SECRET=${{ secrets.JWT_SECRET }}
-        JWT_TTL=${{ vars.JWT_TTL }}
-        PORT=${{ vars.PORT }}
 
     - nane: Shut down containers
       run: docker compose -f docker-compose.yml -p simple_micro_auth down

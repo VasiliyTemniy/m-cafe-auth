@@ -10,7 +10,7 @@ services:
     ports:
       - 4006:4006
     env_file:
-      - .docker.env
+      - .docker.env.example
     depends_on:
       - postgres_db
 
