@@ -34,27 +34,41 @@ func (handler *tokenHandlerImpl) CreateToken(id int64) (string, error) {
 // VerifyToken implements dbHandler.
 func (handler *tokenHandlerImpl) VerifyToken(token string) (int64, error) {
 
-	tokenClaims, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return []byte(EnvJWTSecret), nil
 	})
 
 	if err != nil {
 		return 0, err
-	} else if !tokenClaims.Valid {
+	} else if !parsedToken.Valid {
 		err = fmt.Errorf("invalid token")
 		return 0, err
 	}
 
-	expiresAt, ok := tokenClaims.Claims.(jwt.MapClaims)["expires_at"].(int64)
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok {
+		err = fmt.Errorf("claims malformed")
+		return 0, err
+	}
+
+	expiresAt, ok := claims["expires_at"].(float64)
 	if !ok {
 		err = fmt.Errorf("expires_at claim malformed")
 		return 0, err
-	} else if time.Unix(expiresAt, 0).Before(time.Now()) {
+	}
+
+	if time.Unix(int64(expiresAt), 0).Before(time.Now()) {
 		err = fmt.Errorf("token expired")
 		return 0, err
 	}
 
-	return tokenClaims.Claims.(jwt.MapClaims)["id"].(int64), nil
+	id, ok := claims["id"].(float64)
+	if !ok {
+		err = fmt.Errorf("id claim malformed")
+		return 0, err
+	}
+
+	return int64(id), nil
 }
 
 // RefreshToken implements dbHandler.
