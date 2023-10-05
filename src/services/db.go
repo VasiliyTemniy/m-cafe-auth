@@ -1,31 +1,25 @@
-package configs
+package services
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
+	c "m-cafe-auth/src/configs"
+	m "m-cafe-auth/src/models"
+	"math/rand"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/lib/pq"
 )
 
-func initializeTokenHandler() {
-	tokenHandler = NewTokenHandler()
-}
-
-var tokenHandler ITokenHandler
-
-func init() {
-	initializeTokenHandler()
-}
-
 type dbHandler interface {
-	CreateAuth(auth AuthDTO) *AuthResponse
-	UpdateAuth(auth AuthDTOUpdate) *AuthResponse
+	CreateAuth(auth m.AuthDTO) *m.AuthResponse
+	UpdateAuth(auth m.AuthDTOUpdate) *m.AuthResponse
 	DeleteAuth(lookupHash string) error
-	CompareAuth(auth AuthDTO) *AuthResponse
-	checkAuth(auth AuthDTO) bool
+	CompareAuth(auth m.AuthDTO) *m.AuthResponse
+	checkAuth(auth m.AuthDTO) bool
 }
 
 type dbHandlerImpl struct {
@@ -33,12 +27,12 @@ type dbHandlerImpl struct {
 }
 
 // CreateAuth implements dbHandler.
-func (handler *dbHandlerImpl) CreateAuth(auth AuthDTO) *AuthResponse {
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.Password), EnvBcryptCost)
+func (handler *dbHandlerImpl) CreateAuth(auth m.AuthDTO) *m.AuthResponse {
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.Password), c.EnvBcryptCost)
 
 	if err != nil {
 		log.Println(err)
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Problem with creating this " + auth.Password + " password hash with bcrypt: " + err.Error(),
@@ -50,24 +44,24 @@ func (handler *dbHandlerImpl) CreateAuth(auth AuthDTO) *AuthResponse {
 
 	if err != nil {
 		log.Println(err)
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Problem with creating new auth: " + err.Error(),
 		}
 	}
 
-	tokenString, err := tokenHandler.CreateToken(auth.Id)
+	tokenString, err := tokenHandler.CreateToken(auth.Id, time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), c.EnvJWTSecret)
 	if err != nil {
 		log.Println(err)
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Problem with signing token: " + err.Error(),
 		}
 	}
 
-	return &AuthResponse{
+	return &m.AuthResponse{
 		Id:    auth.Id,
 		Token: tokenString,
 		Error: "",
@@ -75,26 +69,26 @@ func (handler *dbHandlerImpl) CreateAuth(auth AuthDTO) *AuthResponse {
 }
 
 // UpdateAuth implements dbHandler.
-func (handler *dbHandlerImpl) UpdateAuth(auth AuthDTOUpdate) *AuthResponse {
+func (handler *dbHandlerImpl) UpdateAuth(auth m.AuthDTOUpdate) *m.AuthResponse {
 
-	authDTOToCompare := AuthDTO{
+	authDTOToCompare := m.AuthDTO{
 		Id:         auth.Id,
 		LookupHash: auth.LookupHash,
 		Password:   auth.OldPassword,
 	}
 
 	if !handler.checkAuth(authDTOToCompare) {
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Incorrect password",
 		}
 	}
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.NewPassword), EnvBcryptCost)
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.NewPassword), c.EnvBcryptCost)
 	if err != nil {
 		log.Println(err)
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Problem with creating this " + auth.NewPassword + " password hash with bcrypt: " + err.Error(),
@@ -104,24 +98,24 @@ func (handler *dbHandlerImpl) UpdateAuth(auth AuthDTOUpdate) *AuthResponse {
 	_, err = handler.db.Exec(`UPDATE auth SET password_hash = $1 WHERE lookup_hash = $2`, passwordHash, auth.LookupHash)
 	if err != nil {
 		log.Println(err)
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Problem with updating password_hash in db while this lookup_hash was found: " + auth.LookupHash + " error: " + err.Error(),
 		}
 	}
 
-	tokenString, err := tokenHandler.CreateToken(auth.Id)
+	tokenString, err := tokenHandler.CreateToken(auth.Id, time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), c.EnvJWTSecret)
 	if err != nil {
 		log.Println(err)
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Problem with signing token: " + err.Error(),
 		}
 	}
 
-	return &AuthResponse{
+	return &m.AuthResponse{
 		Id:    auth.Id,
 		Token: tokenString,
 		Error: "",
@@ -141,27 +135,27 @@ func (handler *dbHandlerImpl) DeleteAuth(lookupHash string) error {
 }
 
 // CompareAuth implements dbHandler.
-func (handler *dbHandlerImpl) CompareAuth(auth AuthDTO) *AuthResponse {
+func (handler *dbHandlerImpl) CompareAuth(auth m.AuthDTO) *m.AuthResponse {
 
 	if !handler.checkAuth(auth) {
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Incorrect password",
 		}
 	}
 
-	tokenString, err := tokenHandler.CreateToken(auth.Id)
+	tokenString, err := tokenHandler.CreateToken(auth.Id, time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), c.EnvJWTSecret)
 	if err != nil {
 		log.Println(err)
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    auth.Id,
 			Token: "",
 			Error: "Problem with signing token: " + err.Error(),
 		}
 	}
 
-	return &AuthResponse{
+	return &m.AuthResponse{
 		Id:    auth.Id,
 		Token: tokenString,
 		Error: "",
@@ -169,7 +163,7 @@ func (handler *dbHandlerImpl) CompareAuth(auth AuthDTO) *AuthResponse {
 }
 
 // CheckAuth implements dbHandler.
-func (handler *dbHandlerImpl) checkAuth(auth AuthDTO) bool {
+func (handler *dbHandlerImpl) checkAuth(auth m.AuthDTO) bool {
 
 	storedPasswordHashRow, err := handler.db.Query(`SELECT password_hash FROM auth WHERE lookup_hash = $1`, auth.LookupHash)
 	if err != nil {
@@ -192,7 +186,7 @@ func (handler *dbHandlerImpl) checkAuth(auth AuthDTO) bool {
 
 func NewDBHandler() dbHandler {
 
-	postgresConfig := EnvPostgresConfig
+	postgresConfig := c.EnvPostgresConfig
 
 	postgresqlDbInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=%s",

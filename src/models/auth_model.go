@@ -1,4 +1,4 @@
-package configs
+package models
 
 type AuthDTOUpdate struct {
 	Id          int64

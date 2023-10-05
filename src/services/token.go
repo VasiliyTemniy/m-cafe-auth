@@ -1,7 +1,9 @@
-package configs
+package services
 
 import (
 	"fmt"
+	c "m-cafe-auth/src/configs"
+	m "m-cafe-auth/src/models"
 	"math/rand"
 	"time"
 
@@ -9,21 +11,21 @@ import (
 )
 
 type ITokenHandler interface {
-	CreateToken(id int64) (string, error)
-	VerifyToken(token string) (int64, error)
-	RefreshToken(token string) *AuthResponse
+	CreateToken(id int64, expiresAt int64, noise int64, secret string) (string, error)
+	VerifyToken(token string, timeNow int64, secret string) (int64, error)
+	RefreshToken(token string) *m.AuthResponse
 }
 
 type tokenHandlerImpl struct{}
 
-func (handler *tokenHandlerImpl) CreateToken(id int64) (string, error) {
+func (handler *tokenHandlerImpl) CreateToken(id int64, expiresAt int64, noise int64, secret string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":         id,
-		"rand":       rand.Intn(100000),
-		"expires_at": time.Now().Add(time.Hour * time.Duration(EnvJWTExpirationHours)).Unix(),
+		"rand":       noise,
+		"expires_at": expiresAt,
 	})
 
-	tokenString, err := token.SignedString([]byte(EnvJWTSecret))
+	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", err
 	}
@@ -31,16 +33,24 @@ func (handler *tokenHandlerImpl) CreateToken(id int64) (string, error) {
 	return tokenString, nil
 }
 
-func (handler *tokenHandlerImpl) VerifyToken(token string) (int64, error) {
+func (handler *tokenHandlerImpl) VerifyToken(token string, timeNow int64, secret string) (int64, error) {
 
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		return []byte(EnvJWTSecret), nil
+		return []byte(secret), nil
 	})
 
 	if err != nil {
+		err = fmt.Errorf("invalid token or signature")
 		return 0, err
-	} else if !parsedToken.Valid {
+	}
+
+	if !parsedToken.Valid {
 		err = fmt.Errorf("invalid token")
+		return 0, err
+	}
+
+	if parsedToken.Method != jwt.SigningMethodHS256 {
+		err = fmt.Errorf("unexpected signing method")
 		return 0, err
 	}
 
@@ -56,7 +66,7 @@ func (handler *tokenHandlerImpl) VerifyToken(token string) (int64, error) {
 		return 0, err
 	}
 
-	if time.Unix(int64(expiresAt), 0).Before(time.Now()) {
+	if int64(expiresAt) < timeNow {
 		err = fmt.Errorf("token expired")
 		return 0, err
 	}
@@ -70,27 +80,27 @@ func (handler *tokenHandlerImpl) VerifyToken(token string) (int64, error) {
 	return int64(id), nil
 }
 
-func (handler *tokenHandlerImpl) RefreshToken(token string) *AuthResponse {
+func (handler *tokenHandlerImpl) RefreshToken(token string) *m.AuthResponse {
 
-	id, err := handler.VerifyToken(token)
+	id, err := handler.VerifyToken(token, time.Now().Unix(), c.EnvJWTSecret)
 	if err != nil {
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    id,
 			Token: token,
 			Error: "TokenError: " + err.Error(),
 		}
 	}
 
-	tokenString, err := handler.CreateToken(id)
+	tokenString, err := handler.CreateToken(id, time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), c.EnvJWTSecret)
 	if err != nil {
-		return &AuthResponse{
+		return &m.AuthResponse{
 			Id:    id,
 			Token: tokenString,
 			Error: "TokenError: " + err.Error(),
 		}
 	}
 
-	return &AuthResponse{
+	return &m.AuthResponse{
 		Id:    id,
 		Token: tokenString,
 		Error: "",
