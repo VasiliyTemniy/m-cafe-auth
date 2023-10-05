@@ -6,57 +6,70 @@ import (
 	pb "m-cafe-auth/src/proto"
 )
 
-var db = configs.NewDBHandler()
+var (
+	db           = configs.NewDBHandler()
+	tokenHandler = configs.NewTokenHandler()
+)
 
 type AuthServiceServer struct {
 	pb.UnimplementedAuthServiceServer
 }
 
-// func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.CreateAuthRequest) (*pb.CreateAuthResponse, error) {
-// 	resp, err := db.CreateAuth(req.Id)
-
-// 	if err != nil {
-// 			return nil, err
-// 	}
-
-// 	return &pb.AuthResponse{Id: resp.Id.String(), Name: resp.Name, Location: resp.Location, Title: resp.Title}, nil
-// }
-
-func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.CreateAuthRequest) (*pb.CreateAuthResponse, error) {
-	newAuthDTN := configs.AuthDTN{
+func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
+	newAuthDTO := configs.AuthDTO{
 		Id:         req.Id,
 		LookupHash: req.LookupHash,
 		Password:   req.Password,
 	}
-	response := db.CreateAuth(newAuthDTN)
+	response := db.CreateAuth(newAuthDTO)
 
-	return &pb.CreateAuthResponse{Success: response.Success, Token: response.Token}, nil
+	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: response.Error}, nil
 }
 
-func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.UpdateAuthRequest) (*pb.UpdateAuthResponse, error) {
-	updAuthDTN := configs.AuthDTN{
-		Id:         req.Id,
-		LookupHash: req.LookupHash,
-		Password:   req.Password,
+func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.UpdateAuthRequest) (*pb.AuthResponse, error) {
+	updAuthDTO := configs.AuthDTOUpdate{
+		Id:          req.Id,
+		LookupHash:  req.LookupHash,
+		OldPassword: req.OldPassword,
+		NewPassword: req.NewPassword,
 	}
-	response := db.UpdateAuth(updAuthDTN)
+	response := db.UpdateAuth(updAuthDTO)
 
-	return &pb.UpdateAuthResponse{Success: response.Success, Token: response.Token}, nil
+	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: response.Error}, nil
 }
 
 func (service *AuthServiceServer) DeleteAuth(ctx context.Context, req *pb.DeleteAuthRequest) (*pb.DeleteAuthResponse, error) {
 	result := db.DeleteAuth(req.LookupHash)
 
-	return &pb.DeleteAuthResponse{Success: result}, nil
+	response := "ApplicationError: " + result.Error()
+
+	return &pb.DeleteAuthResponse{Error: response}, nil
 }
 
-func (service *AuthServiceServer) CompareAuth(ctx context.Context, req *pb.CompareAuthRequest) (*pb.CompareAuthResponse, error) {
-	compareAuthDT := configs.AuthDT{
+func (service *AuthServiceServer) CompareAuth(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
+	compareAuthDT := configs.AuthDTO{
+		Id:         req.Id,
 		LookupHash: req.LookupHash,
 		Password:   req.Password,
 	}
 
-	result := db.CompareAuth(compareAuthDT)
+	response := db.CompareAuth(compareAuthDT)
 
-	return &pb.CompareAuthResponse{IsMatch: result}, nil
+	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: response.Error}, nil
+}
+
+func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {
+	id, err := tokenHandler.VerifyToken(req.Token)
+
+	if err != nil {
+		return &pb.AuthResponse{Id: id, Token: req.Token, Error: "TokenError: " + err.Error()}, nil
+	}
+
+	return &pb.AuthResponse{Id: id, Token: req.Token, Error: ""}, nil
+}
+
+func (service *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {
+	response := tokenHandler.RefreshToken(req.Token)
+
+	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: response.Error}, nil
 }
