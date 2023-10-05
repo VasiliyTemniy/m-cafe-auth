@@ -3,18 +3,22 @@ package configs
 import (
 	"log"
 	"os"
+	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 var (
-	EnvJWTSecret          string
-	EnvJWTExpirationHours int
-	EnvBcryptCost         int
-	EnvPort               string
-	EnvPostgresConfig     PostgresConfig
+	EnvJWTSecret      string
+	EnvJWTExpiration  time.Duration
+	EnvBcryptCost     int
+	EnvPort           string
+	EnvPostgresConfig PostgresConfig
 )
+
+const projectDirName = "m-cafe-auth"
 
 type PostgresConfig struct {
 	Host     string
@@ -26,46 +30,62 @@ type PostgresConfig struct {
 }
 
 func init() {
-	err := godotenv.Load(".env")
+	err := loadEnv()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal(err)
 	}
-
-	EnvJWTSecret = os.Getenv("JWT_SECRET")
-	EnvJWTExpirationHours, err = strconv.Atoi(os.Getenv("JWT_EXPIRATION_HOURS"))
-	if err != nil {
-		EnvJWTExpirationHours = 24
-	}
-	EnvBcryptCost, err = strconv.Atoi(os.Getenv("BCRYPT_COST"))
-	if err != nil {
-		EnvBcryptCost = 10
-	}
-	EnvPort = os.Getenv("PORT")
-
-	EnvPostgresConfig = getEnvPostgresConfig()
-
-}
-
-func getEnvPostgresConfig() PostgresConfig {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	var postgresConfig PostgresConfig
-
-	postgresConfig.Host = os.Getenv("DATABASE_HOST")
-	postgresConfig.Port = os.Getenv("DATABASE_PORT")
-	postgresConfig.User = os.Getenv("DATABASE_USER")
-	postgresConfig.Password = os.Getenv("DATABASE_PASSWORD")
-	postgresConfig.SslMode = os.Getenv("DATABASE_SSLMODE")
 
 	env := os.Getenv("GO_ENV")
 	if env == "test" {
-		postgresConfig.DBName = os.Getenv("TEST_DATABASE_DBNAME")
+		EnvJWTSecret = os.Getenv("TEST_JWT_SECRET")
+		EnvJWTExpiration, err = time.ParseDuration(os.Getenv("TEST_JWT_TTL"))
+		if err != nil {
+			EnvJWTExpiration, _ = time.ParseDuration("1ns")
+		}
+		EnvBcryptCost, err = strconv.Atoi(os.Getenv("TEST_BCRYPT_COST"))
+		if err != nil {
+			EnvBcryptCost = 10
+		}
+		EnvPort = os.Getenv("PORT")
+
+		EnvPostgresConfig.Host = os.Getenv("TEST_DATABASE_HOST")
+		EnvPostgresConfig.Port = os.Getenv("TEST_DATABASE_PORT")
+		EnvPostgresConfig.User = os.Getenv("TEST_DATABASE_USER")
+		EnvPostgresConfig.Password = os.Getenv("TEST_DATABASE_PASSWORD")
+		EnvPostgresConfig.SslMode = os.Getenv("TEST_DATABASE_SSLMODE")
+		EnvPostgresConfig.DBName = os.Getenv("TEST_DATABASE_DBNAME")
+
 	} else {
-		postgresConfig.DBName = os.Getenv("DATABASE_DBNAME")
+		EnvJWTSecret = os.Getenv("JWT_SECRET")
+		EnvJWTExpiration, err = time.ParseDuration(os.Getenv("JWT_TTL"))
+		if err != nil {
+			EnvJWTExpiration, _ = time.ParseDuration("24h")
+		}
+		EnvBcryptCost, err = strconv.Atoi(os.Getenv("BCRYPT_COST"))
+		if err != nil {
+			EnvBcryptCost = 10
+		}
+		EnvPort = os.Getenv("PORT")
+
+		EnvPostgresConfig.Host = os.Getenv("DATABASE_HOST")
+		EnvPostgresConfig.Port = os.Getenv("DATABASE_PORT")
+		EnvPostgresConfig.User = os.Getenv("DATABASE_USER")
+		EnvPostgresConfig.Password = os.Getenv("DATABASE_PASSWORD")
+		EnvPostgresConfig.SslMode = os.Getenv("DATABASE_SSLMODE")
+		EnvPostgresConfig.DBName = os.Getenv("DATABASE_DBNAME")
+	}
+}
+
+func loadEnv() error {
+	projectName := regexp.MustCompile(`^(.*` + projectDirName + `)`)
+	currentWorkDirectory, _ := os.Getwd()
+	rootPath := projectName.Find([]byte(currentWorkDirectory))
+
+	err := godotenv.Load(string(rootPath) + `/.env`)
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
 	}
 
-	return postgresConfig
+	return err
 }
