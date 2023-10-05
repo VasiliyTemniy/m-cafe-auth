@@ -1,17 +1,20 @@
 package configs
 
-type AuthDT struct {
-	LookupHash string
-	Password   string
+type AuthDTOUpdate struct {
+	Id          int64
+	LookupHash  string
+	OldPassword string
+	NewPassword string
 }
 
-type AuthDTN struct {
+type AuthDTO struct {
 	Id         int64
 	LookupHash string
 	Password   string
 }
 
 type AuthResponse struct {
-	Success bool
-	Token   string
+	Id    int64
+	Token string
+	Error string
 }
