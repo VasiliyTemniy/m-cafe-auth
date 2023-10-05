@@ -59,7 +59,7 @@ jobs:
         TEST_DATABASE_PORT: 5432
         TEST_DATABASE_USER: postgres_user
         TEST_DATABASE_PASSWORD: postgres_password
-        TEST_DATABASE_DBNAME: postgres_db
+        TEST_DATABASE_DBNAME: postgres_db_github
         TEST_DATABASE_SSLMODE: disable
         TEST_JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
         TEST_JWT_TTL: ${{ vars.JWT_TTL }}
