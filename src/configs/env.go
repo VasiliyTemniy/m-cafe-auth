@@ -8,6 +8,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var (
+	EnvJWTSecret          string
+	EnvJWTExpirationHours int
+	EnvBcryptCost         int
+	EnvPort               string
+	EnvPostgresConfig     PostgresConfig
+)
+
 type PostgresConfig struct {
 	Host     string
 	Port     string
@@ -17,7 +25,28 @@ type PostgresConfig struct {
 	SslMode  string
 }
 
-func EnvPostgresConfig() PostgresConfig {
+func init() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	EnvJWTSecret = os.Getenv("JWT_SECRET")
+	EnvJWTExpirationHours, err = strconv.Atoi(os.Getenv("JWT_EXPIRATION_HOURS"))
+	if err != nil {
+		EnvJWTExpirationHours = 24
+	}
+	EnvBcryptCost, err = strconv.Atoi(os.Getenv("BCRYPT_COST"))
+	if err != nil {
+		EnvBcryptCost = 10
+	}
+	EnvPort = os.Getenv("PORT")
+
+	EnvPostgresConfig = getEnvPostgresConfig()
+
+}
+
+func getEnvPostgresConfig() PostgresConfig {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -29,7 +58,7 @@ func EnvPostgresConfig() PostgresConfig {
 	postgresConfig.Port = os.Getenv("DATABASE_PORT")
 	postgresConfig.User = os.Getenv("DATABASE_USER")
 	postgresConfig.Password = os.Getenv("DATABASE_PASSWORD")
-	postgresConfig.SslMode = os.Getenv("DATABASE_SSL_MODE")
+	postgresConfig.SslMode = os.Getenv("DATABASE_SSLMODE")
 
 	env := os.Getenv("GO_ENV")
 	if env == "test" {
@@ -39,51 +68,4 @@ func EnvPostgresConfig() PostgresConfig {
 	}
 
 	return postgresConfig
-}
-
-func EnvBcryptCost() int {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	env := os.Getenv("BCRYPT_COST")
-	if env == "" {
-		return 10
-	}
-
-	cost, err := strconv.Atoi(env)
-	if err != nil {
-		panic(err)
-	}
-
-	return cost
-}
-
-func EnvJWTSecret() string {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	env := os.Getenv("JWT_SECRET")
-	if env == "" {
-		panic("JWT_SECRET must be set")
-	}
-
-	return env
-}
-
-func EnvPort() string {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	env := os.Getenv("PORT")
-	if env == "" {
-		return "4006"
-	}
-
-	return env
 }
