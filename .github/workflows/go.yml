@@ -10,20 +10,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-docker:
+  build-docker-test:
     runs-on: ubuntu-20.04
     environment: testing_env
     steps:
     - uses: actions/checkout@v3
 
-    - name: Build docker image and start container via docker compose
-      run: docker compose -f docker-compose.yml -p simple_micro_auth up
-
-    - name: Shut down containers
-      run: docker compose -f docker-compose.yml -p simple_micro_auth down
+    - name: Build docker image
+      run: docker build .
 
 
-  build-test:
+  app-test:
     runs-on: ubuntu-20.04
     environment: testing_env
     services:
