@@ -19,7 +19,7 @@ jobs:
     - name: Build docker image and start container via docker compose
       run: docker compose -f docker-compose.yml -p simple_micro_auth up
 
-    - nane: Shut down containers
+    - name: Shut down containers
       run: docker compose -f docker-compose.yml -p simple_micro_auth down
 
 
