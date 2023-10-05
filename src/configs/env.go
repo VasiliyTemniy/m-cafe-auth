@@ -30,17 +30,25 @@ type PostgresConfig struct {
 }
 
 func init() {
-	err := loadEnv()
-	if err != nil {
-		log.Fatal(err)
+
+	var err error
+
+	dockerized := os.Getenv("DOCKERIZED")
+
+	if dockerized != "true" {
+		err = loadEnv()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	env := os.Getenv("GO_ENV")
+
 	if env == "test" {
 		EnvJWTSecret = os.Getenv("TEST_JWT_SECRET")
 		EnvJWTExpiration, err = time.ParseDuration(os.Getenv("TEST_JWT_TTL"))
 		if err != nil {
-			EnvJWTExpiration, _ = time.ParseDuration("1ns")
+			EnvJWTExpiration, _ = time.ParseDuration("24h")
 		}
 		EnvBcryptCost, err = strconv.Atoi(os.Getenv("TEST_BCRYPT_COST"))
 		if err != nil {
@@ -82,10 +90,6 @@ func loadEnv() error {
 	rootPath := projectName.Find([]byte(currentWorkDirectory))
 
 	err := godotenv.Load(string(rootPath) + `/.env`)
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
 
 	return err
 }
