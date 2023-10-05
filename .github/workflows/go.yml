@@ -10,9 +10,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-docker:
+    runs-on: ubuntu-20.04
+    environment: testing_env
+    steps:
+    - uses: actions/checkout@v3
 
-  build:
-    runs-on: ubuntu-latest
+    - name: Build docker image and start container via docker compose
+      run: docker compose -f docker-compose.yml -p simple_micro_auth up
+      env:
+        GO_ENV=prod
+        DOCKERIZED=true
+        # Keep these below in sync with docker-compose postgres_db config
+        DATABASE_HOST=postgres_db
+        DATABASE_PORT=5432
+        DATABASE_USER=vasuser
+        DATABASE_PASSWORD=crapassword
+        DATABASE_DBNAME=auth
+        DATABASE_SSLMODE=disable
+        JWT_SECRET=${{ secrets.JWT_SECRET }}
+        JWT_TTL=${{ vars.JWT_TTL }}
+        PORT=${{ vars.PORT }}
+
+    - nane: Shut down containers
+      run: docker compose -f docker-compose.yml -p simple_micro_auth down
+
+
+  build-test:
+    runs-on: ubuntu-20.04
+    environment: testing_env
+    services:
+      postgres:
+        image: postgres:15.3-alpine3.18
+        env:
+          POSTGRES_DB: postgres_db_github
+          POSTGRES_PASSWORD: postgres_password
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres_user
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v3
 
@@ -22,7 +64,19 @@ jobs:
         go-version: '1.20'
 
     - name: Build
-      run: go build -v ./...
+      run: go build ./src/main.go
 
     - name: Test
-      run: go test -v ./...
+      run: go test ./src/tests
+      env:
+        GO_ENV=test
+        DOCKERIZED=true
+        TEST_DATABASE_HOST=127.0.0.1
+        TEST_DATABASE_PORT=5432
+        TEST_DATABASE_USER=postgres_user
+        TEST_DATABASE_PASSWORD=postgres_password
+        TEST_DATABASE_DBNAME=postgres_db
+        TEST_DATABASE_SSLMODE=disable
+        TEST_JWT_SECRET=${{ secrets.TEST_JWT_SECRET }}
+        TEST_JWT_TTL=${{ vars.JWT_TTL }}
+        PORT=${{ vars.PORT }}
