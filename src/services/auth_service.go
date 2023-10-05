@@ -2,13 +2,15 @@ package services
 
 import (
 	"context"
-	"m-cafe-auth/src/configs"
+	c "m-cafe-auth/src/configs"
+	m "m-cafe-auth/src/models"
 	pb "m-cafe-auth/src/proto"
+	"time"
 )
 
 var (
-	db           = configs.NewDBHandler()
-	tokenHandler = configs.NewTokenHandler()
+	db           = NewDBHandler()
+	tokenHandler = NewTokenHandler()
 )
 
 type AuthServiceServer struct {
@@ -16,7 +18,7 @@ type AuthServiceServer struct {
 }
 
 func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
-	newAuthDTO := configs.AuthDTO{
+	newAuthDTO := m.AuthDTO{
 		Id:         req.Id,
 		LookupHash: req.LookupHash,
 		Password:   req.Password,
@@ -27,7 +29,7 @@ func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRe
 }
 
 func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.UpdateAuthRequest) (*pb.AuthResponse, error) {
-	updAuthDTO := configs.AuthDTOUpdate{
+	updAuthDTO := m.AuthDTOUpdate{
 		Id:          req.Id,
 		LookupHash:  req.LookupHash,
 		OldPassword: req.OldPassword,
@@ -47,7 +49,7 @@ func (service *AuthServiceServer) DeleteAuth(ctx context.Context, req *pb.Delete
 }
 
 func (service *AuthServiceServer) CompareAuth(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
-	compareAuthDT := configs.AuthDTO{
+	compareAuthDT := m.AuthDTO{
 		Id:         req.Id,
 		LookupHash: req.LookupHash,
 		Password:   req.Password,
@@ -59,7 +61,7 @@ func (service *AuthServiceServer) CompareAuth(ctx context.Context, req *pb.AuthR
 }
 
 func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {
-	id, err := tokenHandler.VerifyToken(req.Token)
+	id, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), c.EnvJWTSecret)
 
 	if err != nil {
 		return &pb.AuthResponse{Id: id, Token: req.Token, Error: "TokenError: " + err.Error()}, nil
