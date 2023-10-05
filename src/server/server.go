@@ -15,7 +15,7 @@ import (
 var grpcServer *grpc.Server
 
 func RunServer() {
-	listenPort := fmt.Sprintf("[::1]:%s", configs.EnvPort)
+	listenPort := fmt.Sprintf("127.0.0.1:%s", configs.EnvPort)
 
 	lis, err := net.Listen("tcp", listenPort)
 
