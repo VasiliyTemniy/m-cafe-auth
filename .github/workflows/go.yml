@@ -53,14 +53,14 @@ jobs:
     - name: Test
       run: go test ./src/tests
       env:
-        # GO_ENV=test
-        DOCKERIZED=true
-        DATABASE_HOST=127.0.0.1
-        DATABASE_PORT=5432
-        DATABASE_USER=postgres_user
-        DATABASE_PASSWORD=postgres_password
-        DATABASE_DBNAME=postgres_db
-        DATABASE_SSLMODE=disable
-        JWT_SECRET=${{ secrets.TEST_JWT_SECRET }}
-        JWT_TTL=${{ vars.JWT_TTL }}
-        PORT=${{ vars.PORT }}
+        GO_ENV: test
+        DOCKERIZED: true
+        TEST_DATABASE_HOST: 127.0.0.1
+        TEST_DATABASE_PORT: 5432
+        TEST_DATABASE_USER: postgres_user
+        TEST_DATABASE_PASSWORD: postgres_password
+        TEST_DATABASE_DBNAME: postgres_db
+        TEST_DATABASE_SSLMODE: disable
+        TEST_JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+        TEST_JWT_TTL: ${{ vars.JWT_TTL }}
+        PORT: ${{ vars.PORT }}
