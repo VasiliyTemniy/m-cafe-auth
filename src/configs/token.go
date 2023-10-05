@@ -31,7 +31,6 @@ func (handler *tokenHandlerImpl) CreateToken(id int64) (string, error) {
 	return tokenString, nil
 }
 
-// VerifyToken implements dbHandler.
 func (handler *tokenHandlerImpl) VerifyToken(token string) (int64, error) {
 
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
@@ -71,7 +70,6 @@ func (handler *tokenHandlerImpl) VerifyToken(token string) (int64, error) {
 	return int64(id), nil
 }
 
-// RefreshToken implements dbHandler.
 func (handler *tokenHandlerImpl) RefreshToken(token string) *AuthResponse {
 
 	id, err := handler.VerifyToken(token)
