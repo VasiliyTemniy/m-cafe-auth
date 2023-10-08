@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 
+	"simple-micro-auth/src/cert"
 	"simple-micro-auth/src/configs"
 	pb "simple-micro-auth/src/proto"
 	"simple-micro-auth/src/services"
@@ -15,6 +16,8 @@ import (
 var grpcServer *grpc.Server
 
 func RunServer() {
+
+	cert.ReadCertificates("token")
 
 	var host string
 

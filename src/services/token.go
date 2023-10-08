@@ -1,8 +1,10 @@
 package services
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"math/rand"
+	"simple-micro-auth/src/cert"
 	c "simple-micro-auth/src/configs"
 	m "simple-micro-auth/src/models"
 	"time"
@@ -11,21 +13,25 @@ import (
 )
 
 type ITokenHandler interface {
-	CreateToken(id int64, expiresAt int64, noise int64, secret string) (string, error)
-	VerifyToken(token string, timeNow int64, secret string) (int64, error)
+	CreateToken(id int64, timeNow int64, expiresAt int64, noise int64, key *rsa.PrivateKey) (string, error)
+	VerifyToken(token string, timeNow int64, key interface{}) (int64, error)
 	RefreshToken(token string) *m.AuthResponse
 }
 
 type tokenHandlerImpl struct{}
 
-func (handler *tokenHandlerImpl) CreateToken(id int64, expiresAt int64, noise int64, secret string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":         id,
-		"rand":       noise,
-		"expires_at": expiresAt,
+func (handler *tokenHandlerImpl) CreateToken(id int64, timeNow int64, expiresAt int64, noise int64, key *rsa.PrivateKey) (string, error) {
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
+		"id":   id,
+		"rand": noise,
+		"exp":  expiresAt,
+		"iat":  timeNow,
+		"nbf":  timeNow,
+		"iss":  "simple-micro-auth",
 	})
 
-	tokenString, err := token.SignedString([]byte(secret))
+	tokenString, err := token.SignedString(key)
 	if err != nil {
 		return "", err
 	}
@@ -33,10 +39,9 @@ func (handler *tokenHandlerImpl) CreateToken(id int64, expiresAt int64, noise in
 	return tokenString, nil
 }
 
-func (handler *tokenHandlerImpl) VerifyToken(token string, timeNow int64, secret string) (int64, error) {
-
+func (handler *tokenHandlerImpl) VerifyToken(token string, timeNow int64, key interface{}) (int64, error) {
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
+		return key, nil
 	})
 
 	if err != nil {
@@ -49,7 +54,7 @@ func (handler *tokenHandlerImpl) VerifyToken(token string, timeNow int64, secret
 		return 0, err
 	}
 
-	if parsedToken.Method != jwt.SigningMethodHS256 {
+	if parsedToken.Method != jwt.SigningMethodRS256 {
 		err = fmt.Errorf("unexpected signing method")
 		return 0, err
 	}
@@ -60,9 +65,9 @@ func (handler *tokenHandlerImpl) VerifyToken(token string, timeNow int64, secret
 		return 0, err
 	}
 
-	expiresAt, ok := claims["expires_at"].(float64)
+	expiresAt, ok := claims["exp"].(float64)
 	if !ok {
-		err = fmt.Errorf("expires_at claim malformed")
+		err = fmt.Errorf("exp claim malformed")
 		return 0, err
 	}
 
@@ -82,7 +87,7 @@ func (handler *tokenHandlerImpl) VerifyToken(token string, timeNow int64, secret
 
 func (handler *tokenHandlerImpl) RefreshToken(token string) *m.AuthResponse {
 
-	id, err := handler.VerifyToken(token, time.Now().Unix(), c.EnvJWTSecret)
+	id, err := handler.VerifyToken(token, time.Now().Unix(), cert.PublicKey)
 	if err != nil {
 		return &m.AuthResponse{
 			Id:    id,
@@ -91,7 +96,7 @@ func (handler *tokenHandlerImpl) RefreshToken(token string) *m.AuthResponse {
 		}
 	}
 
-	tokenString, err := handler.CreateToken(id, time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), c.EnvJWTSecret)
+	tokenString, err := handler.CreateToken(id, time.Now().Unix(), time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), cert.PrivateKey)
 	if err != nil {
 		return &m.AuthResponse{
 			Id:    id,

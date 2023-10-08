@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"simple-micro-auth/src/cert"
 	c "simple-micro-auth/src/configs"
 	m "simple-micro-auth/src/models"
 	s "simple-micro-auth/src/services"
@@ -13,6 +14,10 @@ import (
 var (
 	db = s.NewDBHandler()
 )
+
+func init() {
+	cert.ReadCertificates("token")
+}
 
 func flushDB() error {
 	postgresConfig := c.EnvPostgresConfig

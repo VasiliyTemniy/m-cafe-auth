@@ -9,6 +9,7 @@ service AuthService {
   rpc CompareAuth (AuthRequest) returns (AuthResponse);
   rpc VerifyToken (TokenRequest) returns (AuthResponse);
   rpc RefreshToken (TokenRequest) returns (AuthResponse);
+  rpc GetPublicKey (PublicKeyRequest) returns (PublicKeyResponse);
 }
 
 
@@ -35,6 +36,10 @@ message TokenRequest {
   string token = 1;
 }
 
+message PublicKeyRequest {
+  string target = 1;
+}
+
 
 // Responses
 
@@ -46,4 +51,8 @@ message AuthResponse {
 
 message DeleteAuthResponse {
   string error = 1;
+}
+
+message PublicKeyResponse {
+  bytes publicKey = 1;
 }
