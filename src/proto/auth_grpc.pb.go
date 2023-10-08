@@ -28,6 +28,7 @@ type AuthServiceClient interface {
 	CompareAuth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	RefreshToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*AuthResponse, error)
+	GetPublicKey(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error)
 }
 
 type authServiceClient struct {
@@ -92,6 +93,15 @@ func (c *authServiceClient) RefreshToken(ctx context.Context, in *TokenRequest, 
 	return out, nil
 }
 
+func (c *authServiceClient) GetPublicKey(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error) {
+	out := new(PublicKeyResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/GetPublicKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
@@ -102,6 +112,7 @@ type AuthServiceServer interface {
 	CompareAuth(context.Context, *AuthRequest) (*AuthResponse, error)
 	VerifyToken(context.Context, *TokenRequest) (*AuthResponse, error)
 	RefreshToken(context.Context, *TokenRequest) (*AuthResponse, error)
+	GetPublicKey(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -126,6 +137,9 @@ func (UnimplementedAuthServiceServer) VerifyToken(context.Context, *TokenRequest
 }
 func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *TokenRequest) (*AuthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedAuthServiceServer) GetPublicKey(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPublicKey not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -248,6 +262,24 @@ func _AuthService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetPublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublicKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetPublicKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/GetPublicKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetPublicKey(ctx, req.(*PublicKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -278,6 +310,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _AuthService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "GetPublicKey",
+			Handler:    _AuthService_GetPublicKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
