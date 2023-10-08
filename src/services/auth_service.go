@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
-	c "simple-micro-auth/src/configs"
+	"encoding/pem"
+	"os"
+	"simple-micro-auth/src/cert"
 	m "simple-micro-auth/src/models"
 	pb "simple-micro-auth/src/proto"
 	"time"
@@ -61,7 +63,7 @@ func (service *AuthServiceServer) CompareAuth(ctx context.Context, req *pb.AuthR
 }
 
 func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {
-	id, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), c.EnvJWTSecret)
+	id, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), cert.PublicKey)
 
 	if err != nil {
 		return &pb.AuthResponse{Id: id, Token: req.Token, Error: "TokenError: " + err.Error()}, nil
@@ -74,4 +76,28 @@ func (service *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.Toke
 	response := tokenHandler.RefreshToken(req.Token)
 
 	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: response.Error}, nil
+}
+
+/**
+ * Get public key
+ */
+func (service *AuthServiceServer) GetPublicKey(ctx context.Context, req *pb.PublicKeyRequest) (*pb.PublicKeyResponse, error) {
+
+	target := req.Target
+
+	// Read the contents of the .pem file
+	publicKeyPEM, err := os.ReadFile("cert/" + target + "/public.pem")
+	if err != nil {
+		return nil, err
+	}
+
+	// Decode the pem file
+	publicKeyBlock, _ := pem.Decode(publicKeyPEM)
+
+	// Create the response message and set the PublicKey field
+	response := &pb.PublicKeyResponse{
+		PublicKey: publicKeyBlock.Bytes,
+	}
+
+	return response, nil
 }
