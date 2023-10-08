@@ -88,9 +88,9 @@ func TestVerifyToken(t *testing.T) {
 		t.Errorf("Expected ID: 0, got: %d", id)
 	}
 
-	// Test case 5: Malformed expires_at claim
+	// Test case 5: Malformed exp claim
 	token = invalidExpiresAtClaimToken
-	expectedErr = fmt.Errorf("expires_at claim malformed")
+	expectedErr = fmt.Errorf("exp claim malformed")
 
 	id, err = tokenHandler.VerifyToken(token, mockTimeNow, mockEnvJWTSecret)
 	if err.Error() != expectedErr.Error() {

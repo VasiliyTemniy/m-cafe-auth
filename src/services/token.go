@@ -20,9 +20,9 @@ type tokenHandlerImpl struct{}
 
 func (handler *tokenHandlerImpl) CreateToken(id int64, expiresAt int64, noise int64, secret string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":         id,
-		"rand":       noise,
-		"expires_at": expiresAt,
+		"id":   id,
+		"rand": noise,
+		"exp":  expiresAt,
 	})
 
 	tokenString, err := token.SignedString([]byte(secret))
@@ -60,9 +60,9 @@ func (handler *tokenHandlerImpl) VerifyToken(token string, timeNow int64, secret
 		return 0, err
 	}
 
-	expiresAt, ok := claims["expires_at"].(float64)
+	expiresAt, ok := claims["exp"].(float64)
 	if !ok {
-		err = fmt.Errorf("expires_at claim malformed")
+		err = fmt.Errorf("exp claim malformed")
 		return 0, err
 	}
 
