@@ -12,7 +12,6 @@ import (
 
 var (
 	EnvDockerized     string
-	EnvJWTSecret      string
 	EnvJWTExpiration  time.Duration
 	EnvBcryptCost     int
 	EnvPort           string
@@ -46,7 +45,6 @@ func init() {
 	env := os.Getenv("GO_ENV")
 
 	if env == "test" {
-		EnvJWTSecret = os.Getenv("TEST_JWT_SECRET")
 		EnvJWTExpiration, err = time.ParseDuration(os.Getenv("TEST_JWT_TTL"))
 		if err != nil {
 			EnvJWTExpiration, _ = time.ParseDuration("24h")
@@ -65,7 +63,6 @@ func init() {
 		EnvPostgresConfig.DBName = os.Getenv("TEST_DATABASE_DBNAME")
 
 	} else {
-		EnvJWTSecret = os.Getenv("JWT_SECRET")
 		EnvJWTExpiration, err = time.ParseDuration(os.Getenv("JWT_TTL"))
 		if err != nil {
 			EnvJWTExpiration, _ = time.ParseDuration("24h")
