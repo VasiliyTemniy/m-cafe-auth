@@ -6,3 +6,4 @@
 *.dylib
 go.work
 .env.*
+*.pem
