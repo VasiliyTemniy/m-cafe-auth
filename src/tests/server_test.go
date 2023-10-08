@@ -1,8 +1,11 @@
 package tests
 
 import (
+	"bytes"
 	"context"
+	"crypto/x509"
 	"fmt"
+	"simple-micro-auth/src/cert"
 	"simple-micro-auth/src/configs"
 	"simple-micro-auth/src/server"
 	"testing"
@@ -50,12 +53,27 @@ func TestMain(t *testing.T) {
 	}
 
 	// Send request
-	res, err := client.CreateAuth(context.Background(), req)
+	authRes, err := client.CreateAuth(context.Background(), req)
 	if err != nil {
 		t.Fatalf("could not greet: %v", err)
 	}
 
-	if res.Id != 123 {
-		t.Errorf("expected id: %s, got: %s", "123", fmt.Sprintf("%v", (res.Id)))
+	if authRes.Id != 123 {
+		t.Errorf("expected id: %s, got: %s", "123", fmt.Sprintf("%v", (authRes.Id)))
+	}
+
+	// Test RSA PublicKey sending
+	publicKeyRes, err := client.GetPublicKey(context.Background(), &pb.PublicKeyRequest{Target: "token"})
+	if err != nil {
+		t.Fatalf("could not greet: %v", err)
+	}
+
+	expectedPublicKeyBytes, err := x509.MarshalPKIXPublicKey(cert.PublicKey)
+	if err != nil {
+		t.Fatalf("could not convert public key: %v", err)
+	}
+
+	if !bytes.Equal(expectedPublicKeyBytes, publicKeyRes.PublicKey) {
+		t.Errorf("expected public key: %s, got: %s", expectedPublicKeyBytes, publicKeyRes.PublicKey)
 	}
 }
