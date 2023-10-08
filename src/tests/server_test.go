@@ -9,6 +9,7 @@ import (
 	"simple-micro-auth/src/configs"
 	"simple-micro-auth/src/server"
 	"testing"
+	"time"
 
 	pb "simple-micro-auth/src/proto"
 
@@ -23,6 +24,8 @@ func TestMain(t *testing.T) {
 	go func() {
 		server.RunServer()
 	}()
+
+	time.Sleep(1 * time.Second)
 
 	var host string
 
