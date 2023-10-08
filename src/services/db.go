@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"simple-micro-auth/src/cert"
 	c "simple-micro-auth/src/configs"
 	m "simple-micro-auth/src/models"
 	"time"
@@ -51,7 +52,13 @@ func (handler *dbHandlerImpl) CreateAuth(auth m.AuthDTO) *m.AuthResponse {
 		}
 	}
 
-	tokenString, err := tokenHandler.CreateToken(auth.Id, time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), c.EnvJWTSecret)
+	tokenString, err := tokenHandler.CreateToken(
+		auth.Id,
+		time.Now().Unix(),
+		time.Now().Add(c.EnvJWTExpiration).Unix(),
+		rand.Int63(),
+		cert.PrivateKey,
+	)
 	if err != nil {
 		log.Println(err)
 		return &m.AuthResponse{
@@ -105,7 +112,13 @@ func (handler *dbHandlerImpl) UpdateAuth(auth m.AuthDTOUpdate) *m.AuthResponse {
 		}
 	}
 
-	tokenString, err := tokenHandler.CreateToken(auth.Id, time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), c.EnvJWTSecret)
+	tokenString, err := tokenHandler.CreateToken(
+		auth.Id,
+		time.Now().Unix(),
+		time.Now().Add(c.EnvJWTExpiration).Unix(),
+		rand.Int63(),
+		cert.PrivateKey,
+	)
 	if err != nil {
 		log.Println(err)
 		return &m.AuthResponse{
@@ -145,7 +158,13 @@ func (handler *dbHandlerImpl) CompareAuth(auth m.AuthDTO) *m.AuthResponse {
 		}
 	}
 
-	tokenString, err := tokenHandler.CreateToken(auth.Id, time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), c.EnvJWTSecret)
+	tokenString, err := tokenHandler.CreateToken(
+		auth.Id,
+		time.Now().Unix(),
+		time.Now().Add(c.EnvJWTExpiration).Unix(),
+		rand.Int63(),
+		cert.PrivateKey,
+	)
 	if err != nil {
 		log.Println(err)
 		return &m.AuthResponse{
