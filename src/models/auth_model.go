@@ -1,5 +1,11 @@
 package models
 
+type AuthDTO struct {
+	Id         int64
+	LookupHash string
+	Password   string
+}
+
 type AuthDTOUpdate struct {
 	Id          int64
 	LookupHash  string
@@ -7,10 +13,15 @@ type AuthDTOUpdate struct {
 	NewPassword string
 }
 
-type AuthDTO struct {
-	Id         int64
+type CredentialsDTO struct {
 	LookupHash string
 	Password   string
+}
+
+type CredentialsDTOUpdate struct {
+	LookupHash  string
+	OldPassword string
+	NewPassword string
 }
 
 type AuthResponse struct {
