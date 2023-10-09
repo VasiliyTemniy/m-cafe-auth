@@ -8,7 +8,7 @@ service AuthService {
   rpc DeleteAuth (DeleteAuthRequest) returns (DeleteAuthResponse);
   rpc GrantAuth (AuthRequest) returns (AuthResponse);
   rpc VerifyCredentials (CredentialsRequest) returns (VerifyResponse);
-  rpc VerifyToken (TokenRequest) returns (VerifyResponse);
+  rpc VerifyToken (TokenRequest) returns (AuthResponse);
   rpc RefreshToken (TokenRequest) returns (AuthResponse);
   rpc GetPublicKey (PublicKeyRequest) returns (PublicKeyResponse);
   rpc FlushDB (FlushDBRequest) returns (FlushDBResponse);
