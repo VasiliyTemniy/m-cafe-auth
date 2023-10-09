@@ -25,10 +25,12 @@ type AuthServiceClient interface {
 	CreateAuth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	UpdateAuth(ctx context.Context, in *UpdateAuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	DeleteAuth(ctx context.Context, in *DeleteAuthRequest, opts ...grpc.CallOption) (*DeleteAuthResponse, error)
-	CompareAuth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
-	VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*AuthResponse, error)
+	GrantAuth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
+	VerifyCredentials(ctx context.Context, in *CredentialsRequest, opts ...grpc.CallOption) (*VerifyResponse, error)
+	VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*VerifyResponse, error)
 	RefreshToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	GetPublicKey(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error)
+	FlushDB(ctx context.Context, in *FlushDBRequest, opts ...grpc.CallOption) (*FlushDBResponse, error)
 }
 
 type authServiceClient struct {
@@ -66,17 +68,26 @@ func (c *authServiceClient) DeleteAuth(ctx context.Context, in *DeleteAuthReques
 	return out, nil
 }
 
-func (c *authServiceClient) CompareAuth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error) {
+func (c *authServiceClient) GrantAuth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error) {
 	out := new(AuthResponse)
-	err := c.cc.Invoke(ctx, "/auth.AuthService/CompareAuth", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/GrantAuth", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*AuthResponse, error) {
-	out := new(AuthResponse)
+func (c *authServiceClient) VerifyCredentials(ctx context.Context, in *CredentialsRequest, opts ...grpc.CallOption) (*VerifyResponse, error) {
+	out := new(VerifyResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/VerifyCredentials", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*VerifyResponse, error) {
+	out := new(VerifyResponse)
 	err := c.cc.Invoke(ctx, "/auth.AuthService/VerifyToken", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -102,6 +113,15 @@ func (c *authServiceClient) GetPublicKey(ctx context.Context, in *PublicKeyReque
 	return out, nil
 }
 
+func (c *authServiceClient) FlushDB(ctx context.Context, in *FlushDBRequest, opts ...grpc.CallOption) (*FlushDBResponse, error) {
+	out := new(FlushDBResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/FlushDB", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
@@ -109,10 +129,12 @@ type AuthServiceServer interface {
 	CreateAuth(context.Context, *AuthRequest) (*AuthResponse, error)
 	UpdateAuth(context.Context, *UpdateAuthRequest) (*AuthResponse, error)
 	DeleteAuth(context.Context, *DeleteAuthRequest) (*DeleteAuthResponse, error)
-	CompareAuth(context.Context, *AuthRequest) (*AuthResponse, error)
-	VerifyToken(context.Context, *TokenRequest) (*AuthResponse, error)
+	GrantAuth(context.Context, *AuthRequest) (*AuthResponse, error)
+	VerifyCredentials(context.Context, *CredentialsRequest) (*VerifyResponse, error)
+	VerifyToken(context.Context, *TokenRequest) (*VerifyResponse, error)
 	RefreshToken(context.Context, *TokenRequest) (*AuthResponse, error)
 	GetPublicKey(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error)
+	FlushDB(context.Context, *FlushDBRequest) (*FlushDBResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -129,10 +151,13 @@ func (UnimplementedAuthServiceServer) UpdateAuth(context.Context, *UpdateAuthReq
 func (UnimplementedAuthServiceServer) DeleteAuth(context.Context, *DeleteAuthRequest) (*DeleteAuthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAuth not implemented")
 }
-func (UnimplementedAuthServiceServer) CompareAuth(context.Context, *AuthRequest) (*AuthResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CompareAuth not implemented")
+func (UnimplementedAuthServiceServer) GrantAuth(context.Context, *AuthRequest) (*AuthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GrantAuth not implemented")
 }
-func (UnimplementedAuthServiceServer) VerifyToken(context.Context, *TokenRequest) (*AuthResponse, error) {
+func (UnimplementedAuthServiceServer) VerifyCredentials(context.Context, *CredentialsRequest) (*VerifyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyCredentials not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyToken(context.Context, *TokenRequest) (*VerifyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyToken not implemented")
 }
 func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *TokenRequest) (*AuthResponse, error) {
@@ -140,6 +165,9 @@ func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *TokenReques
 }
 func (UnimplementedAuthServiceServer) GetPublicKey(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPublicKey not implemented")
+}
+func (UnimplementedAuthServiceServer) FlushDB(context.Context, *FlushDBRequest) (*FlushDBResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FlushDB not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -208,20 +236,38 @@ func _AuthService_DeleteAuth_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_CompareAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_GrantAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AuthRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).CompareAuth(ctx, in)
+		return srv.(AuthServiceServer).GrantAuth(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth.AuthService/CompareAuth",
+		FullMethod: "/auth.AuthService/GrantAuth",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).CompareAuth(ctx, req.(*AuthRequest))
+		return srv.(AuthServiceServer).GrantAuth(ctx, req.(*AuthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_VerifyCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CredentialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyCredentials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/VerifyCredentials",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyCredentials(ctx, req.(*CredentialsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -280,6 +326,24 @@ func _AuthService_GetPublicKey_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_FlushDB_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FlushDBRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).FlushDB(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/FlushDB",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).FlushDB(ctx, req.(*FlushDBRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -300,8 +364,12 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_DeleteAuth_Handler,
 		},
 		{
-			MethodName: "CompareAuth",
-			Handler:    _AuthService_CompareAuth_Handler,
+			MethodName: "GrantAuth",
+			Handler:    _AuthService_GrantAuth_Handler,
+		},
+		{
+			MethodName: "VerifyCredentials",
+			Handler:    _AuthService_VerifyCredentials_Handler,
 		},
 		{
 			MethodName: "VerifyToken",
@@ -314,6 +382,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPublicKey",
 			Handler:    _AuthService_GetPublicKey_Handler,
+		},
+		{
+			MethodName: "FlushDB",
+			Handler:    _AuthService_FlushDB_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
