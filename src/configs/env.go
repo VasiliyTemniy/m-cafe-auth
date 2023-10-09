@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	EnvGoEnv          string
 	EnvDockerized     string
 	EnvJWTExpiration  time.Duration
 	EnvBcryptCost     int
@@ -42,9 +43,12 @@ func init() {
 		}
 	}
 
-	env := os.Getenv("GO_ENV")
+	EnvGoEnv = os.Getenv("GO_ENV")
+	if (EnvGoEnv != "test" && EnvGoEnv != "dev" && EnvGoEnv != "production") || EnvGoEnv == "" {
+		EnvGoEnv = "production"
+	}
 
-	if env == "test" {
+	if EnvGoEnv == "test" {
 		EnvJWTExpiration, err = time.ParseDuration(os.Getenv("TEST_JWT_TTL"))
 		if err != nil {
 			EnvJWTExpiration, _ = time.ParseDuration("24h")
