@@ -118,14 +118,14 @@ func (service *AuthServiceServer) VerifyCredentials(ctx context.Context, req *pb
 	return &pb.VerifyResponse{Success: true, Error: ""}, nil
 }
 
-func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.TokenRequest) (*pb.VerifyResponse, error) {
-	_, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), cert.PublicKey)
+func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {
+	id, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), cert.PublicKey)
 
 	if err != nil {
-		return &pb.VerifyResponse{Success: false, Error: err.Error()}, nil
+		return &pb.AuthResponse{Id: 0, Token: "", Error: err.Error()}, nil
 	}
 
-	return &pb.VerifyResponse{Success: true, Error: ""}, nil
+	return &pb.AuthResponse{Id: id, Token: req.Token, Error: ""}, nil
 }
 
 func (service *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {

@@ -181,8 +181,12 @@ func TestMain(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if !verifyTokenRes.Success {
-		t.Errorf("expected success: %v, got: %v", true, verifyTokenRes.Success)
+	if verifyTokenRes.Id != grantAuthRes.Id {
+		t.Errorf("expected id: %s, got: %s", "123", fmt.Sprintf("%v", (verifyTokenRes.Id)))
+	}
+
+	if verifyTokenRes.Token == "" {
+		t.Errorf("expected token: %s, got: %s", "token", verifyTokenRes.Token)
 	}
 
 	if verifyTokenRes.Error != "" {

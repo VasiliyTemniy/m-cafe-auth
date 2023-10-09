@@ -27,7 +27,7 @@ type AuthServiceClient interface {
 	DeleteAuth(ctx context.Context, in *DeleteAuthRequest, opts ...grpc.CallOption) (*DeleteAuthResponse, error)
 	GrantAuth(ctx context.Context, in *AuthRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	VerifyCredentials(ctx context.Context, in *CredentialsRequest, opts ...grpc.CallOption) (*VerifyResponse, error)
-	VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*VerifyResponse, error)
+	VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	RefreshToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*AuthResponse, error)
 	GetPublicKey(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error)
 	FlushDB(ctx context.Context, in *FlushDBRequest, opts ...grpc.CallOption) (*FlushDBResponse, error)
@@ -86,8 +86,8 @@ func (c *authServiceClient) VerifyCredentials(ctx context.Context, in *Credentia
 	return out, nil
 }
 
-func (c *authServiceClient) VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*VerifyResponse, error) {
-	out := new(VerifyResponse)
+func (c *authServiceClient) VerifyToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*AuthResponse, error) {
+	out := new(AuthResponse)
 	err := c.cc.Invoke(ctx, "/auth.AuthService/VerifyToken", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ type AuthServiceServer interface {
 	DeleteAuth(context.Context, *DeleteAuthRequest) (*DeleteAuthResponse, error)
 	GrantAuth(context.Context, *AuthRequest) (*AuthResponse, error)
 	VerifyCredentials(context.Context, *CredentialsRequest) (*VerifyResponse, error)
-	VerifyToken(context.Context, *TokenRequest) (*VerifyResponse, error)
+	VerifyToken(context.Context, *TokenRequest) (*AuthResponse, error)
 	RefreshToken(context.Context, *TokenRequest) (*AuthResponse, error)
 	GetPublicKey(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error)
 	FlushDB(context.Context, *FlushDBRequest) (*FlushDBResponse, error)
@@ -157,7 +157,7 @@ func (UnimplementedAuthServiceServer) GrantAuth(context.Context, *AuthRequest) (
 func (UnimplementedAuthServiceServer) VerifyCredentials(context.Context, *CredentialsRequest) (*VerifyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyCredentials not implemented")
 }
-func (UnimplementedAuthServiceServer) VerifyToken(context.Context, *TokenRequest) (*VerifyResponse, error) {
+func (UnimplementedAuthServiceServer) VerifyToken(context.Context, *TokenRequest) (*AuthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyToken not implemented")
 }
 func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *TokenRequest) (*AuthResponse, error) {
