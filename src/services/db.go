@@ -4,11 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"math/rand"
-	"simple-micro-auth/src/cert"
 	c "simple-micro-auth/src/configs"
 	m "simple-micro-auth/src/models"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -16,127 +13,62 @@ import (
 )
 
 type dbHandler interface {
-	CreateAuth(auth m.AuthDTO) *m.AuthResponse
-	UpdateAuth(auth m.AuthDTOUpdate) *m.AuthResponse
-	DeleteAuth(lookupHash string) error
-	CompareAuth(auth m.AuthDTO) *m.AuthResponse
-	checkAuth(auth m.AuthDTO) bool
+	CreateCredentials(auth m.CredentialsDTO) error
+	UpdateCredentials(auth m.CredentialsDTOUpdate) error
+	DeleteCredentials(lookupHash string) error
+	VerifyCredentials(credentials m.CredentialsDTO) error
+	FlushDB() error
 }
 
 type dbHandlerImpl struct {
 	db *sql.DB
 }
 
-// CreateAuth implements dbHandler.
-func (handler *dbHandlerImpl) CreateAuth(auth m.AuthDTO) *m.AuthResponse {
+func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.Password), c.EnvBcryptCost)
 
 	if err != nil {
-		log.Println(err)
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Problem with creating this " + auth.Password + " password hash with bcrypt: " + err.Error(),
-		}
+		return err
 	}
 
 	_, err = handler.db.Exec(`INSERT INTO auth(lookup_hash, password_hash)
 	VALUES($1, $2)`, auth.LookupHash, passwordHash)
 
 	if err != nil {
-		log.Println(err)
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Problem with creating new auth: " + err.Error(),
-		}
+		return err
 	}
 
-	tokenString, err := tokenHandler.CreateToken(
-		auth.Id,
-		time.Now().Unix(),
-		time.Now().Add(c.EnvJWTExpiration).Unix(),
-		rand.Int63(),
-		cert.PrivateKey,
-	)
-	if err != nil {
-		log.Println(err)
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Problem with signing token: " + err.Error(),
-		}
-	}
-
-	return &m.AuthResponse{
-		Id:    auth.Id,
-		Token: tokenString,
-		Error: "",
-	}
+	return err
 }
 
-// UpdateAuth implements dbHandler.
-func (handler *dbHandlerImpl) UpdateAuth(auth m.AuthDTOUpdate) *m.AuthResponse {
+func (handler *dbHandlerImpl) UpdateCredentials(auth m.CredentialsDTOUpdate) error {
 
-	authDTOToCompare := m.AuthDTO{
-		Id:         auth.Id,
+	credentialsDTOToCompare := m.CredentialsDTO{
 		LookupHash: auth.LookupHash,
 		Password:   auth.OldPassword,
 	}
 
-	if !handler.checkAuth(authDTOToCompare) {
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Incorrect password",
-		}
+	err := handler.VerifyCredentials(credentialsDTOToCompare)
+	if err != nil {
+		return err
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.NewPassword), c.EnvBcryptCost)
 	if err != nil {
-		log.Println(err)
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Problem with creating this " + auth.NewPassword + " password hash with bcrypt: " + err.Error(),
-		}
+		err = fmt.Errorf("Problem with creating this " + auth.NewPassword + " password hash with bcrypt: " + err.Error())
+		return err
 	}
 
 	_, err = handler.db.Exec(`UPDATE auth SET password_hash = $1 WHERE lookup_hash = $2`, passwordHash, auth.LookupHash)
 	if err != nil {
-		log.Println(err)
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Problem with updating password_hash in db while this lookup_hash was found: " + auth.LookupHash + " error: " + err.Error(),
-		}
+		err = fmt.Errorf("Problem with updating password_hash in db while this lookup_hash was found: " + auth.LookupHash + " error: " + err.Error())
+		return err
 	}
 
-	tokenString, err := tokenHandler.CreateToken(
-		auth.Id,
-		time.Now().Unix(),
-		time.Now().Add(c.EnvJWTExpiration).Unix(),
-		rand.Int63(),
-		cert.PrivateKey,
-	)
-	if err != nil {
-		log.Println(err)
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Problem with signing token: " + err.Error(),
-		}
-	}
-
-	return &m.AuthResponse{
-		Id:    auth.Id,
-		Token: tokenString,
-		Error: "",
-	}
+	return err
 }
 
-// DeleteAuth implements dbHandler.
-func (handler *dbHandlerImpl) DeleteAuth(lookupHash string) error {
+func (handler *dbHandlerImpl) DeleteCredentials(lookupHash string) error {
 
 	_, err := handler.db.Exec(`DELETE FROM auth WHERE lookup_hash = $1`, lookupHash)
 	if err != nil {
@@ -147,47 +79,11 @@ func (handler *dbHandlerImpl) DeleteAuth(lookupHash string) error {
 	return err
 }
 
-// CompareAuth implements dbHandler.
-func (handler *dbHandlerImpl) CompareAuth(auth m.AuthDTO) *m.AuthResponse {
+func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) error {
 
-	if !handler.checkAuth(auth) {
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Incorrect password",
-		}
-	}
-
-	tokenString, err := tokenHandler.CreateToken(
-		auth.Id,
-		time.Now().Unix(),
-		time.Now().Add(c.EnvJWTExpiration).Unix(),
-		rand.Int63(),
-		cert.PrivateKey,
-	)
+	storedPasswordHashRow, err := handler.db.Query(`SELECT password_hash FROM auth WHERE lookup_hash = $1`, credentials.LookupHash)
 	if err != nil {
-		log.Println(err)
-		return &m.AuthResponse{
-			Id:    auth.Id,
-			Token: "",
-			Error: "Problem with signing token: " + err.Error(),
-		}
-	}
-
-	return &m.AuthResponse{
-		Id:    auth.Id,
-		Token: tokenString,
-		Error: "",
-	}
-}
-
-// CheckAuth implements dbHandler.
-func (handler *dbHandlerImpl) checkAuth(auth m.AuthDTO) bool {
-
-	storedPasswordHashRow, err := handler.db.Query(`SELECT password_hash FROM auth WHERE lookup_hash = $1`, auth.LookupHash)
-	if err != nil {
-		log.Println(err)
-		return false
+		return err
 	}
 
 	var storedPasswordHash string
@@ -195,12 +91,17 @@ func (handler *dbHandlerImpl) checkAuth(auth m.AuthDTO) bool {
 	if storedPasswordHashRow.Next() {
 		err = storedPasswordHashRow.Scan(&storedPasswordHash)
 		if err != nil {
-			log.Println(err)
-			return false
+			return err
 		}
 	}
 
-	return bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(auth.Password)) == nil
+	return bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(credentials.Password))
+}
+
+func (handler *dbHandlerImpl) FlushDB() error {
+	_, err := handler.db.Exec(`DELETE FROM auth`)
+
+	return err
 }
 
 func NewDBHandler() dbHandler {
