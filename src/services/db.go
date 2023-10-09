@@ -29,11 +29,6 @@ func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 
 	if err != nil {
 		return err
-		// return &m.AuthResponse{
-		// 	Id:    auth.Id,
-		// 	Token: "",
-		// 	Error: "Problem with creating this " + auth.Password + " password hash with bcrypt: " + err.Error(),
-		// }
 	}
 
 	_, err = handler.db.Exec(`INSERT INTO auth(lookup_hash, password_hash)
@@ -41,28 +36,7 @@ func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 
 	if err != nil {
 		return err
-		// return &m.AuthResponse{
-		// 	Id:    auth.Id,
-		// 	Token: "",
-		// 	Error: "Problem with creating new auth: " + err.Error(),
-		// }
 	}
-
-	// tokenString, err := tokenHandler.CreateToken(
-	// 	auth.Id,
-	// 	time.Now().Unix(),
-	// 	time.Now().Add(c.EnvJWTExpiration).Unix(),
-	// 	rand.Int63(),
-	// 	cert.PrivateKey,
-	// )
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return &m.AuthResponse{
-	// 		Id:    auth.Id,
-	// 		Token: "",
-	// 		Error: "Problem with signing token: " + err.Error(),
-	// 	}
-	// }
 
 	return err
 }
@@ -77,57 +51,19 @@ func (handler *dbHandlerImpl) UpdateCredentials(auth m.CredentialsDTOUpdate) err
 	err := handler.VerifyCredentials(credentialsDTOToCompare)
 	if err != nil {
 		return err
-		// return &m.AuthResponse{
-		// 	Id:    auth.Id,
-		// 	Token: "",
-		// 	Error: "Incorrect password",
-		// }
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.NewPassword), c.EnvBcryptCost)
 	if err != nil {
 		err = fmt.Errorf("Problem with creating this " + auth.NewPassword + " password hash with bcrypt: " + err.Error())
 		return err
-		// return &m.AuthResponse{
-		// 	Id:    auth.Id,
-		// 	Token: "",
-		// 	Error: "Problem with creating this " + auth.NewPassword + " password hash with bcrypt: " + err.Error(),
-		// }
 	}
 
 	_, err = handler.db.Exec(`UPDATE auth SET password_hash = $1 WHERE lookup_hash = $2`, passwordHash, auth.LookupHash)
 	if err != nil {
 		err = fmt.Errorf("Problem with updating password_hash in db while this lookup_hash was found: " + auth.LookupHash + " error: " + err.Error())
 		return err
-
-		// return &m.AuthResponse{
-		// 	Id:    auth.Id,
-		// 	Token: "",
-		// 	Error: "Problem with updating password_hash in db while this lookup_hash was found: " + auth.LookupHash + " error: " + err.Error(),
-		// }
 	}
-
-	// tokenString, err := tokenHandler.CreateToken(
-	// 	auth.Id,
-	// 	time.Now().Unix(),
-	// 	time.Now().Add(c.EnvJWTExpiration).Unix(),
-	// 	rand.Int63(),
-	// 	cert.PrivateKey,
-	// )
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return &m.AuthResponse{
-	// 		Id:    auth.Id,
-	// 		Token: "",
-	// 		Error: "Problem with signing token: " + err.Error(),
-	// 	}
-	// }
-
-	// return &m.AuthResponse{
-	// 	Id:    auth.Id,
-	// 	Token: tokenString,
-	// 	Error: "",
-	// }
 
 	return err
 }
