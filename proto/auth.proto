@@ -76,6 +76,7 @@ message DeleteAuthResponse {
 
 message PublicKeyResponse {
   bytes publicKey = 1;
+  string error = 2;
 }
 
 message FlushDBResponse {
