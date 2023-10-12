@@ -173,3 +173,11 @@ func (service *AuthServiceServer) FlushDB(ctx context.Context, req *pb.FlushDBRe
 
 	return &pb.FlushDBResponse{Error: ""}, nil
 }
+
+func (service *AuthServiceServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
+	if req.Message == "ping" {
+		return &pb.PingResponse{Message: "pong"}, nil
+	} else {
+		return &pb.PingResponse{Message: "Hello there!"}, nil
+	}
+}

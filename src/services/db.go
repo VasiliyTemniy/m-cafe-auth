@@ -95,7 +95,17 @@ func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) er
 		}
 	}
 
-	return bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(credentials.Password))
+	if storedPasswordHash == "" {
+		err = fmt.Errorf("lookupHash not found")
+		return err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(credentials.Password))
+	if err != nil && err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" {
+		err = fmt.Errorf("invalid password")
+	}
+
+	return err
 }
 
 func (handler *dbHandlerImpl) FlushDB() error {
