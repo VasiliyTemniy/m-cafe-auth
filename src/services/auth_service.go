@@ -9,6 +9,7 @@ import (
 	c "simple-micro-auth/src/configs"
 	m "simple-micro-auth/src/models"
 	pb "simple-micro-auth/src/proto"
+	"strings"
 	"time"
 )
 
@@ -28,7 +29,7 @@ func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRe
 	}
 	err := db.CreateCredentials(newCredentialsDTO)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: err.Error()}, nil
+		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	token, err := tokenHandler.CreateToken(
@@ -39,7 +40,7 @@ func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRe
 		cert.PrivateKey,
 	)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: err.Error()}, nil
+		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	return &pb.AuthResponse{Id: req.Id, Token: token, Error: ""}, nil
@@ -53,7 +54,7 @@ func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.Update
 	}
 	err := db.UpdateCredentials(updCredentialsDTO)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: err.Error()}, nil
+		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	token, err := tokenHandler.CreateToken(
@@ -64,7 +65,7 @@ func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.Update
 		cert.PrivateKey,
 	)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: err.Error()}, nil
+		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	return &pb.AuthResponse{Id: req.Id, Token: token, Error: ""}, nil
@@ -73,7 +74,7 @@ func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.Update
 func (service *AuthServiceServer) DeleteAuth(ctx context.Context, req *pb.DeleteAuthRequest) (*pb.DeleteAuthResponse, error) {
 	err := db.DeleteCredentials(req.LookupHash)
 	if err != nil {
-		return &pb.DeleteAuthResponse{Error: err.Error()}, nil
+		return &pb.DeleteAuthResponse{Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	return &pb.DeleteAuthResponse{Error: ""}, nil
@@ -87,7 +88,7 @@ func (service *AuthServiceServer) GrantAuth(ctx context.Context, req *pb.AuthReq
 
 	err := db.VerifyCredentials(compareCredentialsDT)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: err.Error()}, nil
+		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	token, err := tokenHandler.CreateToken(
@@ -98,7 +99,7 @@ func (service *AuthServiceServer) GrantAuth(ctx context.Context, req *pb.AuthReq
 		cert.PrivateKey,
 	)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: err.Error()}, nil
+		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	return &pb.AuthResponse{Id: req.Id, Token: token, Error: ""}, nil
@@ -112,7 +113,7 @@ func (service *AuthServiceServer) VerifyCredentials(ctx context.Context, req *pb
 
 	err := db.VerifyCredentials(compareCredentialsDT)
 	if err != nil {
-		return &pb.VerifyResponse{Success: false, Error: err.Error()}, nil
+		return &pb.VerifyResponse{Success: false, Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	return &pb.VerifyResponse{Success: true, Error: ""}, nil
@@ -122,7 +123,7 @@ func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.Token
 	id, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), cert.PublicKey)
 
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: err.Error()}, nil
+		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	return &pb.AuthResponse{Id: id, Token: req.Token, Error: ""}, nil
@@ -131,7 +132,7 @@ func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.Token
 func (service *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {
 	response := tokenHandler.RefreshToken(req.Token)
 
-	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: response.Error}, nil
+	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: strings.ToValidUTF8(response.Error, "UTF-8_BUGFIX")}, nil
 }
 
 /**
@@ -144,18 +145,20 @@ func (service *AuthServiceServer) GetPublicKey(ctx context.Context, req *pb.Publ
 	// Read the contents of the .pem file
 	publicKeyPEM, err := os.ReadFile("cert/" + target + "/public.pem")
 	if err != nil {
-		return nil, err
+		return &pb.PublicKeyResponse{
+			PublicKey: []byte{},
+			Error:     strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX"),
+		}, nil
 	}
 
 	// Decode the pem file
 	publicKeyBlock, _ := pem.Decode(publicKeyPEM)
 
 	// Create the response message and set the PublicKey field
-	response := &pb.PublicKeyResponse{
+	return &pb.PublicKeyResponse{
 		PublicKey: publicKeyBlock.Bytes,
-	}
-
-	return response, nil
+		Error:     "",
+	}, nil
 }
 
 func (service *AuthServiceServer) FlushDB(ctx context.Context, req *pb.FlushDBRequest) (*pb.FlushDBResponse, error) {
@@ -168,7 +171,7 @@ func (service *AuthServiceServer) FlushDB(ctx context.Context, req *pb.FlushDBRe
 
 	err := db.FlushDB()
 	if err != nil {
-		return &pb.FlushDBResponse{Error: err.Error()}, nil
+		return &pb.FlushDBResponse{Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	return &pb.FlushDBResponse{Error: ""}, nil
