@@ -12,6 +12,7 @@ service AuthService {
   rpc RefreshToken (TokenRequest) returns (AuthResponse);
   rpc GetPublicKey (PublicKeyRequest) returns (PublicKeyResponse);
   rpc FlushDB (FlushDBRequest) returns (FlushDBResponse);
+  rpc Ping (PingRequest) returns (PingResponse);
 }
 
 
@@ -51,6 +52,10 @@ message FlushDBRequest {
   string reason = 1;
 }
 
+message PingRequest {
+  string message = 1;
+}
+
 
 // Responses
 
@@ -75,4 +80,8 @@ message PublicKeyResponse {
 
 message FlushDBResponse {
   string error = 1;
+}
+
+message PingResponse {
+  string message = 1;
 }
