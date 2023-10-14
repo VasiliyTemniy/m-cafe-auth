@@ -32,10 +32,15 @@ func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRe
 		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
+	tokenTtl, err := time.ParseDuration(req.Ttl)
+	if err != nil {
+		tokenTtl = c.EnvJWTExpiration
+	}
+
 	token, err := tokenHandler.CreateToken(
 		req.Id,
 		time.Now().Unix(),
-		time.Now().Add(c.EnvJWTExpiration).Unix(),
+		time.Now().Add(tokenTtl).Unix(),
 		rand.Int63(),
 		cert.PrivateKey,
 	)
@@ -57,10 +62,15 @@ func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.Update
 		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
+	tokenTtl, err := time.ParseDuration(req.Ttl)
+	if err != nil {
+		tokenTtl = c.EnvJWTExpiration
+	}
+
 	token, err := tokenHandler.CreateToken(
 		req.Id,
 		time.Now().Unix(),
-		time.Now().Add(c.EnvJWTExpiration).Unix(),
+		time.Now().Add(tokenTtl).Unix(),
 		rand.Int63(),
 		cert.PrivateKey,
 	)
@@ -91,10 +101,15 @@ func (service *AuthServiceServer) GrantAuth(ctx context.Context, req *pb.AuthReq
 		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
+	tokenTtl, err := time.ParseDuration(req.Ttl)
+	if err != nil {
+		tokenTtl = c.EnvJWTExpiration
+	}
+
 	token, err := tokenHandler.CreateToken(
 		req.Id,
 		time.Now().Unix(),
-		time.Now().Add(c.EnvJWTExpiration).Unix(),
+		time.Now().Add(tokenTtl).Unix(),
 		rand.Int63(),
 		cert.PrivateKey,
 	)
@@ -119,7 +134,7 @@ func (service *AuthServiceServer) VerifyCredentials(ctx context.Context, req *pb
 	return &pb.VerifyResponse{Success: true, Error: ""}, nil
 }
 
-func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {
+func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.AuthResponse, error) {
 	id, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), cert.PublicKey)
 
 	if err != nil {
@@ -129,8 +144,13 @@ func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.Token
 	return &pb.AuthResponse{Id: id, Token: req.Token, Error: ""}, nil
 }
 
-func (service *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.TokenRequest) (*pb.AuthResponse, error) {
-	response := tokenHandler.RefreshToken(req.Token)
+func (service *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.AuthResponse, error) {
+	tokenTtl, err := time.ParseDuration(req.Ttl)
+	if err != nil {
+		tokenTtl = c.EnvJWTExpiration
+	}
+
+	response := tokenHandler.RefreshToken(req.Token, tokenTtl)
 
 	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: strings.ToValidUTF8(response.Error, "UTF-8_BUGFIX")}, nil
 }
