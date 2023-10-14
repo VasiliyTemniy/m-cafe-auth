@@ -146,8 +146,9 @@ func TestMain(t *testing.T) {
 	}
 
 	// Test 6: Refresh token
-	refreshTokenReq := &pb.TokenRequest{
+	refreshTokenReq := &pb.RefreshTokenRequest{
 		Token: grantAuthRes.Token,
+		Ttl:   "10s",
 	}
 
 	refreshTokenRes, err := client.RefreshToken(context.Background(), refreshTokenReq)
@@ -172,7 +173,7 @@ func TestMain(t *testing.T) {
 	}
 
 	// Test 7: Verify token
-	verifyTokenReq := &pb.TokenRequest{
+	verifyTokenReq := &pb.VerifyTokenRequest{
 		Token: refreshTokenRes.Token,
 	}
 

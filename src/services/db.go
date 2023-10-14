@@ -28,6 +28,8 @@ func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.Password), c.EnvBcryptCost)
 
 	if err != nil {
+		fmt.Println(err)
+		err = fmt.Errorf("error creating password hash with bcrypt")
 		return err
 	}
 
@@ -35,6 +37,8 @@ func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 	VALUES($1, $2)`, auth.LookupHash, passwordHash)
 
 	if err != nil {
+		fmt.Println(err)
+		err = fmt.Errorf("error creating credentials in db")
 		return err
 	}
 
@@ -55,13 +59,15 @@ func (handler *dbHandlerImpl) UpdateCredentials(auth m.CredentialsDTOUpdate) err
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(auth.NewPassword), c.EnvBcryptCost)
 	if err != nil {
-		err = fmt.Errorf("Problem with creating this " + auth.NewPassword + " password hash with bcrypt: " + err.Error())
+		fmt.Println(err)
+		err = fmt.Errorf("error creating this password hash with bcrypt")
 		return err
 	}
 
 	_, err = handler.db.Exec(`UPDATE auth SET password_hash = $1 WHERE lookup_hash = $2`, passwordHash, auth.LookupHash)
 	if err != nil {
-		err = fmt.Errorf("Problem with updating password_hash in db while this lookup_hash was found: " + auth.LookupHash + " error: " + err.Error())
+		fmt.Println(err)
+		err = fmt.Errorf("error updating password_hash in db while this lookup_hash was found: " + auth.LookupHash)
 		return err
 	}
 
@@ -73,6 +79,7 @@ func (handler *dbHandlerImpl) DeleteCredentials(lookupHash string) error {
 	_, err := handler.db.Exec(`DELETE FROM auth WHERE lookup_hash = $1`, lookupHash)
 	if err != nil {
 		log.Println(err)
+		err = fmt.Errorf("error deleting credentials from db")
 		return err
 	}
 
@@ -83,6 +90,8 @@ func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) er
 
 	storedPasswordHashRow, err := handler.db.Query(`SELECT password_hash FROM auth WHERE lookup_hash = $1`, credentials.LookupHash)
 	if err != nil {
+		fmt.Println(err)
+		err = fmt.Errorf("error reading password_hash from db")
 		return err
 	}
 
@@ -91,6 +100,8 @@ func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) er
 	if storedPasswordHashRow.Next() {
 		err = storedPasswordHashRow.Scan(&storedPasswordHash)
 		if err != nil {
+			fmt.Println(err)
+			err = fmt.Errorf("error reading password_hash from db")
 			return err
 		}
 	}
@@ -111,6 +122,12 @@ func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) er
 func (handler *dbHandlerImpl) FlushDB() error {
 	_, err := handler.db.Exec(`DELETE FROM auth`)
 
+	if err != nil {
+		log.Println(err)
+		err = fmt.Errorf("error flushing db")
+		return err
+	}
+
 	return err
 }
 
@@ -130,14 +147,14 @@ func NewDBHandler() dbHandler {
 
 	db, err := sql.Open("postgres", postgresqlDbInfo)
 	if err != nil {
-		log.Fatal("Error opening db")
-		log.Fatal("DB connection string: ", postgresqlDbInfo)
+		log.Fatal("error opening db")
+		log.Fatal("db connection string: ", postgresqlDbInfo)
 		panic(err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatal("Error pinging db")
+		log.Fatal("error pinging db")
 		panic(err)
 	}
 
@@ -146,7 +163,7 @@ func NewDBHandler() dbHandler {
 		password_hash varchar(100) NOT NULL
 	)`)
 	if err != nil {
-		log.Fatal("Error creating auth table")
+		log.Fatal("error creating auth table")
 		panic(err)
 	} else {
 		log.Println("auth table exists or created")

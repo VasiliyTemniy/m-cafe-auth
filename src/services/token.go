@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"simple-micro-auth/src/cert"
-	c "simple-micro-auth/src/configs"
 	m "simple-micro-auth/src/models"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 type ITokenHandler interface {
 	CreateToken(id int64, timeNow int64, expiresAt int64, noise int64, key *rsa.PrivateKey) (string, error)
 	VerifyToken(token string, timeNow int64, key interface{}) (int64, error)
-	RefreshToken(token string) *m.AuthResponse
+	RefreshToken(token string, tokenTtl time.Duration) *m.AuthResponse
 }
 
 type tokenHandlerImpl struct{}
@@ -85,7 +84,7 @@ func (handler *tokenHandlerImpl) VerifyToken(token string, timeNow int64, key in
 	return int64(id), nil
 }
 
-func (handler *tokenHandlerImpl) RefreshToken(token string) *m.AuthResponse {
+func (handler *tokenHandlerImpl) RefreshToken(token string, tokenTtl time.Duration) *m.AuthResponse {
 
 	id, err := handler.VerifyToken(token, time.Now().Unix(), cert.PublicKey)
 	if err != nil {
@@ -96,7 +95,7 @@ func (handler *tokenHandlerImpl) RefreshToken(token string) *m.AuthResponse {
 		}
 	}
 
-	tokenString, err := handler.CreateToken(id, time.Now().Unix(), time.Now().Add(c.EnvJWTExpiration).Unix(), rand.Int63(), cert.PrivateKey)
+	tokenString, err := handler.CreateToken(id, time.Now().Unix(), time.Now().Add(tokenTtl).Unix(), rand.Int63(), cert.PrivateKey)
 	if err != nil {
 		return &m.AuthResponse{
 			Id:    id,

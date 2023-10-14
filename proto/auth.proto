@@ -8,8 +8,8 @@ service AuthService {
   rpc DeleteAuth (DeleteAuthRequest) returns (DeleteAuthResponse);
   rpc GrantAuth (AuthRequest) returns (AuthResponse);
   rpc VerifyCredentials (CredentialsRequest) returns (VerifyResponse);
-  rpc VerifyToken (TokenRequest) returns (AuthResponse);
-  rpc RefreshToken (TokenRequest) returns (AuthResponse);
+  rpc VerifyToken (VerifyTokenRequest) returns (AuthResponse);
+  rpc RefreshToken (RefreshTokenRequest) returns (AuthResponse);
   rpc GetPublicKey (PublicKeyRequest) returns (PublicKeyResponse);
   rpc FlushDB (FlushDBRequest) returns (FlushDBResponse);
   rpc Ping (PingRequest) returns (PingResponse);
@@ -22,6 +22,7 @@ message AuthRequest {
   int64 id = 1;
   string lookupHash = 2;
   string password = 3;
+  string ttl = 4;
 }
 
 message UpdateAuthRequest {
@@ -29,6 +30,7 @@ message UpdateAuthRequest {
   string lookupHash = 2;
   string oldPassword = 3;
   string newPassword = 4;
+  string ttl = 5;
 }
 
 message CredentialsRequest {
@@ -40,8 +42,13 @@ message DeleteAuthRequest {
   string lookupHash = 1;
 }
 
-message TokenRequest {
+message VerifyTokenRequest {
   string token = 1;
+}
+
+message RefreshTokenRequest {
+  string token = 1;
+  string ttl = 2;
 }
 
 message PublicKeyRequest {
@@ -76,6 +83,7 @@ message DeleteAuthResponse {
 
 message PublicKeyResponse {
   bytes publicKey = 1;
+  string error = 2;
 }
 
 message FlushDBResponse {
