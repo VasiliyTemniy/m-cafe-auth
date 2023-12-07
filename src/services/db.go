@@ -94,6 +94,7 @@ func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) er
 		err = fmt.Errorf("error reading password_hash from db")
 		return err
 	}
+	defer storedPasswordHashRow.Close()
 
 	var storedPasswordHash string
 
