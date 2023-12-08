@@ -37,7 +37,10 @@ func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 	VALUES($1, $2)`, auth.LookupHash, passwordHash)
 
 	if err != nil {
-		fmt.Println(err)
+		if err.Error() != `pq: duplicate key value violates unique constraint "auth_pkey"` {
+			fmt.Println(err)
+			return err
+		}
 		err = fmt.Errorf("error creating credentials in db")
 		return err
 	}
