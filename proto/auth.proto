@@ -19,27 +19,29 @@ service AuthService {
 // Requests
 
 message AuthRequest {
-  int64 id = 1;
-  string lookupHash = 2;
+  string user_id = 1;
+  string app_id = 2;
   string password = 3;
   string ttl = 4;
 }
 
 message UpdateAuthRequest {
-  int64 id = 1;
-  string lookupHash = 2;
-  string oldPassword = 3;
-  string newPassword = 4;
+  string user_id = 1;
+  string app_id = 2;
+  string old_password = 3;
+  string new_password = 4;
   string ttl = 5;
 }
 
 message CredentialsRequest {
-  string lookupHash = 1;
-  string password = 2;
+  string user_id = 1;
+  string app_id = 2;
+  string password = 3;
 }
 
 message DeleteAuthRequest {
-  string lookupHash = 1;
+  string user_id = 1;
+  string app_id = 2;
 }
 
 message VerifyTokenRequest {
@@ -67,7 +69,7 @@ message PingRequest {
 // Responses
 
 message AuthResponse {
-  int64 id = 1;
+  string id = 1;
   string token = 2;
   string error = 3;
 }
@@ -82,7 +84,7 @@ message DeleteAuthResponse {
 }
 
 message PublicKeyResponse {
-  bytes publicKey = 1;
+  bytes public_key = 1;
   string error = 2;
 }
 
