@@ -23,6 +23,7 @@ type CredentialsDTO struct {
 
 type CredentialsDTOUpdate struct {
 	UserId	   	UUID
+	AppId       UUID
 	OldPassword string
 	NewPassword string
 }

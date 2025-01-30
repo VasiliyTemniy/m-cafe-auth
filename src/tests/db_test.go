@@ -11,6 +11,12 @@ var (
 	db = s.NewDBHandler()
 )
 
+const (
+	userId   = "10222fc6-148d-464c-9770-8f6f187d0b43"
+	appId    = "10222fc6-148d-464c-9770-8f6f187d0b44"
+	password = "test"
+)
+
 func init() {
 	cert.ReadCertificates("token")
 }
@@ -19,8 +25,9 @@ func TestCreateCredentials(t *testing.T) {
 	db.FlushDB()
 
 	err := db.CreateCredentials(m.CredentialsDTO{
-		LookupHash: "test",
-		Password:   "test",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password,
 	})
 
 	if err != nil {
@@ -32,8 +39,9 @@ func TestVerifyCredentials(t *testing.T) {
 	db.FlushDB()
 
 	err := db.CreateCredentials(m.CredentialsDTO{
-		LookupHash: "test",
-		Password:   "test",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password,
 	})
 
 	if err != nil {
@@ -42,8 +50,9 @@ func TestVerifyCredentials(t *testing.T) {
 
 	// Test case 1: Valid credentials
 	err = db.VerifyCredentials(m.CredentialsDTO{
-		LookupHash: "test",
-		Password:   "test",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password,
 	})
 
 	if err != nil {
@@ -52,12 +61,13 @@ func TestVerifyCredentials(t *testing.T) {
 
 	// Test case 2: Invalid credentials
 	err = db.VerifyCredentials(m.CredentialsDTO{
-		LookupHash: "test",
-		Password:   "test1",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password + "1",
 	})
 
 	if err == nil {
-		t.Errorf("expected error: %s, got: %s", "something", err.Error())
+		t.Errorf("expected error: %s, got: %s", "something", "nothing")
 	}
 }
 
@@ -65,8 +75,9 @@ func TestUpdateCredentials(t *testing.T) {
 	db.FlushDB()
 
 	err := db.CreateCredentials(m.CredentialsDTO{
-		LookupHash: "test",
-		Password:   "test",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password,
 	})
 
 	if err != nil {
@@ -75,9 +86,10 @@ func TestUpdateCredentials(t *testing.T) {
 
 	// Test case 1: Valid credentials
 	err = db.UpdateCredentials(m.CredentialsDTOUpdate{
-		LookupHash:  "test",
-		OldPassword: "test",
-		NewPassword: "test1",
+		UserId:      userId,
+		AppId:       appId,
+		OldPassword: password,
+		NewPassword: password + "1",
 	})
 
 	if err != nil {
@@ -86,12 +98,13 @@ func TestUpdateCredentials(t *testing.T) {
 
 	// Test case 2: Invalid credentials
 	err = db.UpdateCredentials(m.CredentialsDTOUpdate{
-		LookupHash:  "test",
+		UserId:      userId,
+		AppId:       appId,
 		OldPassword: "something_totally_different",
 		NewPassword: "test123",
 	})
 
 	if err == nil {
-		t.Errorf("expected error: %s, got: %s", "something", err.Error())
+		t.Errorf("expected error: %s, got: %s", "something", "nothing")
 	}
 }

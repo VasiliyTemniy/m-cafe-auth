@@ -15,6 +15,14 @@ import (
 
 var grpcServer *grpc.Server
 
+// STEPS!
+// 1. DONE! Make it work the same but with UUIDs instead of ints
+// 2. Add ORM (gorm)
+// 3. Add HTTP GIN server as option
+// 4. Make it accept connections from docker network only
+// 5. Introduce the mTLS to secure the connection
+// 6. Make something like api keys to access the server from different services
+
 func RunServer() {
 
 	cert.ReadCertificates("token")

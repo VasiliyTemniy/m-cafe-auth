@@ -49,9 +49,9 @@ func TestMain(t *testing.T) {
 
 	// Test 2: Create request
 	newAuthReq := &pb.AuthRequest{
-		Id:         123,
-		LookupHash: "test",
-		Password:   "test",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password,
 	}
 
 	authRes, err := client.CreateAuth(context.Background(), newAuthReq)
@@ -59,8 +59,8 @@ func TestMain(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if authRes.Id != 123 {
-		t.Errorf("expected id: %s, got: %s", "123", fmt.Sprintf("%v", (authRes.Id)))
+	if authRes.UserId != userId {
+		t.Errorf("expected id: %s, got: %s", "test-user", fmt.Sprintf("%v", authRes.UserId))
 	}
 
 	if authRes.Token == "" {
@@ -69,10 +69,10 @@ func TestMain(t *testing.T) {
 
 	// Test 3: Update request
 	updateAuthReq := &pb.UpdateAuthRequest{
-		Id:          123,
-		LookupHash:  "test",
-		OldPassword: "test",
-		NewPassword: "test1",
+		UserId:      userId,
+		AppId:       appId,
+		OldPassword: password,
+		NewPassword: password + "1",
 	}
 
 	updAuthRes, err := client.UpdateAuth(context.Background(), updateAuthReq)
@@ -80,8 +80,8 @@ func TestMain(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if updAuthRes.Id != 123 {
-		t.Errorf("expected id: %s, got: %s", "123", fmt.Sprintf("%v", (updAuthRes.Id)))
+	if updAuthRes.UserId != userId {
+		t.Errorf("expected id: %s, got: %s", "test-user", fmt.Sprintf("%v", updAuthRes.UserId))
 	}
 
 	if updAuthRes.Token == "" {
@@ -90,8 +90,9 @@ func TestMain(t *testing.T) {
 
 	// Test 4: Verify request
 	correctCredentials := &pb.CredentialsRequest{
-		LookupHash: "test",
-		Password:   "test1",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password + "1",
 	}
 
 	verifyRes, err := client.VerifyCredentials(context.Background(), correctCredentials)
@@ -108,8 +109,9 @@ func TestMain(t *testing.T) {
 	}
 
 	incorrectCredentials := &pb.CredentialsRequest{
-		LookupHash: "test",
-		Password:   "test123",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password + "2",
 	}
 
 	verifyRes, err = client.VerifyCredentials(context.Background(), incorrectCredentials)
@@ -127,9 +129,9 @@ func TestMain(t *testing.T) {
 
 	// Test 5: Grant auth
 	grantAuthReq := &pb.AuthRequest{
-		Id:         123,
-		LookupHash: "test",
-		Password:   "test1",
+		UserId:   userId,
+		AppId:    appId,
+		Password: password + "1",
 	}
 
 	grantAuthRes, err := client.GrantAuth(context.Background(), grantAuthReq)
@@ -137,8 +139,8 @@ func TestMain(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if grantAuthRes.Id != 123 {
-		t.Errorf("expected id: %s, got: %s", "123", fmt.Sprintf("%v", (grantAuthRes.Id)))
+	if grantAuthRes.UserId != userId {
+		t.Errorf("expected id: %s, got: %s", "test-user", fmt.Sprintf("%v", grantAuthRes.UserId))
 	}
 
 	if grantAuthRes.Token == "" {
@@ -156,8 +158,8 @@ func TestMain(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if refreshTokenRes.Id != grantAuthRes.Id {
-		t.Errorf("expected id: %s, got: %s", "123", fmt.Sprintf("%v", (refreshTokenRes.Id)))
+	if refreshTokenRes.UserId != grantAuthRes.UserId {
+		t.Errorf("expected id: %s, got: %s", grantAuthRes.UserId, refreshTokenRes.UserId)
 	}
 
 	if refreshTokenRes.Token == "" {
@@ -182,8 +184,8 @@ func TestMain(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if verifyTokenRes.Id != grantAuthRes.Id {
-		t.Errorf("expected id: %s, got: %s", "123", fmt.Sprintf("%v", (verifyTokenRes.Id)))
+	if verifyTokenRes.UserId != grantAuthRes.UserId {
+		t.Errorf("expected id: %s, got: %s", grantAuthRes.UserId, verifyTokenRes.UserId)
 	}
 
 	if verifyTokenRes.Token == "" {
@@ -196,7 +198,8 @@ func TestMain(t *testing.T) {
 
 	// Test 8: Delete auth
 	deleteAuthReq := &pb.DeleteAuthRequest{
-		LookupHash: "test",
+		UserId: userId,
+		AppId:  appId,
 	}
 
 	deleteAuthRes, err := client.DeleteAuth(context.Background(), deleteAuthReq)

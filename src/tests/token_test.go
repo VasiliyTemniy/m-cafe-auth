@@ -18,7 +18,7 @@ const (
 	mockExpiresAt    = int64(100000000000)
 	mockTimeNow      = int64(99990)
 	mockRandomNumber = int64(12345)
-	mockId           = int64(123)
+	mockId           = "10222fc6-148d-464c-9770-8f6f187d0b43"
 )
 
 func init() {
@@ -39,7 +39,7 @@ func TestCreateAndVerifyToken(t *testing.T) {
 	}
 
 	if id != mockId {
-		t.Errorf("Expected ID: %d, got: %d", mockId, id)
+		t.Errorf("Expected ID: %s, got: %s", mockId, id)
 	}
 
 	// Test case 2: Invalid token
@@ -47,11 +47,11 @@ func TestCreateAndVerifyToken(t *testing.T) {
 	expectedErr := fmt.Errorf("invalid token or signature")
 
 	id, err = tokenHandler.VerifyToken(invalidToken, mockTimeNow, cert.PublicKey)
-	if err.Error() != expectedErr.Error() {
+	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("Expected error: %v, got: %v", expectedErr, err)
 	}
-	if id != 0 {
-		t.Errorf("Expected ID: 0, got: %d", id)
+	if id != "" {
+		t.Errorf("Expected ID: empty string, got: %s", id)
 	}
 
 	// Test case 3: expired token
@@ -60,11 +60,11 @@ func TestCreateAndVerifyToken(t *testing.T) {
 	muchMoreMockTimeNow := mockExpiresAt + 1000
 
 	id, err = tokenHandler.VerifyToken(validTokenString, muchMoreMockTimeNow, cert.PublicKey)
-	if err.Error() != expectedErr.Error() {
+	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("Expected error: %v, got: %v", expectedErr, err)
 	}
-	if id != 0 {
-		t.Errorf("Expected ID: 0, got: %d", id)
+	if id != "" {
+		t.Errorf("Expected ID: empty string, got: %s", id)
 	}
 
 	// Test case 4: unexpected signing method
@@ -74,7 +74,7 @@ func TestCreateAndVerifyToken(t *testing.T) {
 	}
 
 	invalidSignedToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":   id,
+		"id":   mockId,
 		"rand": mockRandomNumber,
 		"exp":  mockExpiresAt,
 		"iat":  mockTimeNow,
@@ -89,16 +89,16 @@ func TestCreateAndVerifyToken(t *testing.T) {
 	expectedErr = fmt.Errorf("unexpected signing method")
 
 	id, err = tokenHandler.VerifyToken(invalidSignedToken, mockTimeNow, cert.PublicKey)
-	if err.Error() != expectedErr.Error() && err.Error() != expectedButInterceptedErr.Error() {
+	if err == nil || (err.Error() != expectedErr.Error() && err.Error() != expectedButInterceptedErr.Error()) {
 		t.Errorf("Expected error: %v, got: %v", expectedErr, err)
 	}
-	if id != 0 {
-		t.Errorf("Expected ID: 0, got: %d", id)
+	if id != "" {
+		t.Errorf("Expected ID: empty string, got: %s", id)
 	}
 
 	// Test case 5: malformed exp claim
 	invalidExpClaimToken, err := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"id":   id,
+		"id":   mockId,
 		"rand": mockRandomNumber,
 		// "exp":  "invalid",
 		"iat": mockTimeNow,
@@ -112,33 +112,10 @@ func TestCreateAndVerifyToken(t *testing.T) {
 	expectedErr = fmt.Errorf("exp claim malformed")
 
 	id, err = tokenHandler.VerifyToken(invalidExpClaimToken, mockTimeNow, cert.PublicKey)
-	if err.Error() != expectedErr.Error() {
+	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("Expected error: %v, got: %v", expectedErr, err)
 	}
-	if id != 0 {
-		t.Errorf("Expected ID: 0, got: %d", id)
-	}
-
-	// Test case 6: malformed id claim
-	invalidIdClaimToken, err := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"id":   "invalid",
-		"rand": mockRandomNumber,
-		"exp":  mockExpiresAt,
-		"iat":  mockTimeNow,
-		"nbf":  mockTimeNow,
-		"iss":  "simple-micro-auth",
-	}).SignedString(cert.PrivateKey)
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-
-	expectedErr = fmt.Errorf("id claim malformed")
-
-	id, err = tokenHandler.VerifyToken(invalidIdClaimToken, mockTimeNow, cert.PublicKey)
-	if err.Error() != expectedErr.Error() {
-		t.Errorf("Expected error: %v, got: %v", expectedErr, err)
-	}
-	if id != 0 {
-		t.Errorf("Expected ID: 0, got: %d", id)
+	if id != "" {
+		t.Errorf("Expected ID: empty string, got: %s", id)
 	}
 }

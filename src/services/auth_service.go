@@ -24,12 +24,13 @@ type AuthServiceServer struct {
 
 func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
 	newCredentialsDTO := m.CredentialsDTO{
-		LookupHash: req.LookupHash,
+		UserId:     m.UUID(req.UserId),
+		AppId:      m.UUID(req.AppId),
 		Password:   req.Password,
 	}
 	err := db.CreateCredentials(newCredentialsDTO)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
+		return &pb.AuthResponse{UserId: "", Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	tokenTtl, err := time.ParseDuration(req.Ttl)
@@ -38,28 +39,29 @@ func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRe
 	}
 
 	token, err := tokenHandler.CreateToken(
-		req.Id,
+	  m.UUID(req.UserId),
 		time.Now().Unix(),
 		time.Now().Add(tokenTtl).Unix(),
 		rand.Int63(),
 		cert.PrivateKey,
 	)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
+		return &pb.AuthResponse{UserId: "", Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
-	return &pb.AuthResponse{Id: req.Id, Token: token, Error: ""}, nil
+	return &pb.AuthResponse{UserId: req.UserId, Token: token, Error: ""}, nil
 }
 
 func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.UpdateAuthRequest) (*pb.AuthResponse, error) {
 	updCredentialsDTO := m.CredentialsDTOUpdate{
-		LookupHash:  req.LookupHash,
+		UserId:      m.UUID(req.UserId),
+		AppId:       m.UUID(req.AppId),
 		OldPassword: req.OldPassword,
 		NewPassword: req.NewPassword,
 	}
 	err := db.UpdateCredentials(updCredentialsDTO)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
+		return &pb.AuthResponse{UserId: "", Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	tokenTtl, err := time.ParseDuration(req.Ttl)
@@ -68,21 +70,21 @@ func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.Update
 	}
 
 	token, err := tokenHandler.CreateToken(
-		req.Id,
+		m.UUID(req.UserId),
 		time.Now().Unix(),
 		time.Now().Add(tokenTtl).Unix(),
 		rand.Int63(),
 		cert.PrivateKey,
 	)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
+		return &pb.AuthResponse{UserId: "", Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
-	return &pb.AuthResponse{Id: req.Id, Token: token, Error: ""}, nil
+	return &pb.AuthResponse{UserId: req.UserId, Token: token, Error: ""}, nil
 }
 
 func (service *AuthServiceServer) DeleteAuth(ctx context.Context, req *pb.DeleteAuthRequest) (*pb.DeleteAuthResponse, error) {
-	err := db.DeleteCredentials(req.LookupHash)
+	err := db.DeleteCredentials(m.UUID(req.UserId), m.UUID(req.AppId))
 	if err != nil {
 		return &pb.DeleteAuthResponse{Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
@@ -92,13 +94,14 @@ func (service *AuthServiceServer) DeleteAuth(ctx context.Context, req *pb.Delete
 
 func (service *AuthServiceServer) GrantAuth(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
 	compareCredentialsDT := m.CredentialsDTO{
-		LookupHash: req.LookupHash,
+		UserId:     m.UUID(req.UserId),
+		AppId:      m.UUID(req.AppId),
 		Password:   req.Password,
 	}
 
 	err := db.VerifyCredentials(compareCredentialsDT)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
+		return &pb.AuthResponse{UserId: "", Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
 	tokenTtl, err := time.ParseDuration(req.Ttl)
@@ -107,22 +110,23 @@ func (service *AuthServiceServer) GrantAuth(ctx context.Context, req *pb.AuthReq
 	}
 
 	token, err := tokenHandler.CreateToken(
-		req.Id,
+		m.UUID(req.UserId),
 		time.Now().Unix(),
 		time.Now().Add(tokenTtl).Unix(),
 		rand.Int63(),
 		cert.PrivateKey,
 	)
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
+		return &pb.AuthResponse{UserId: "", Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
-	return &pb.AuthResponse{Id: req.Id, Token: token, Error: ""}, nil
+	return &pb.AuthResponse{UserId: req.UserId, Token: token, Error: ""}, nil
 }
 
 func (service *AuthServiceServer) VerifyCredentials(ctx context.Context, req *pb.CredentialsRequest) (*pb.VerifyResponse, error) {
 	compareCredentialsDT := m.CredentialsDTO{
-		LookupHash: req.LookupHash,
+		UserId:     m.UUID(req.UserId),
+		AppId:      m.UUID(req.AppId),
 		Password:   req.Password,
 	}
 
@@ -135,13 +139,13 @@ func (service *AuthServiceServer) VerifyCredentials(ctx context.Context, req *pb
 }
 
 func (service *AuthServiceServer) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.AuthResponse, error) {
-	id, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), cert.PublicKey)
+	userId, err := tokenHandler.VerifyToken(req.Token, time.Now().Unix(), cert.PublicKey)
 
 	if err != nil {
-		return &pb.AuthResponse{Id: 0, Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
+		return &pb.AuthResponse{UserId: "", Token: "", Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
 
-	return &pb.AuthResponse{Id: id, Token: req.Token, Error: ""}, nil
+	return &pb.AuthResponse{UserId: string(userId), Token: req.Token, Error: ""}, nil
 }
 
 func (service *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.AuthResponse, error) {
@@ -152,7 +156,7 @@ func (service *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.Refr
 
 	response := tokenHandler.RefreshToken(req.Token, tokenTtl)
 
-	return &pb.AuthResponse{Id: response.Id, Token: response.Token, Error: strings.ToValidUTF8(response.Error, "UTF-8_BUGFIX")}, nil
+	return &pb.AuthResponse{UserId: string(response.UserId), Token: response.Token, Error: strings.ToValidUTF8(response.Error, "UTF-8_BUGFIX")}, nil
 }
 
 /**
