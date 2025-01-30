@@ -69,7 +69,7 @@ message PingRequest {
 // Responses
 
 message AuthResponse {
-  string id = 1;
+  string user_id = 1;
   string token = 2;
   string error = 3;
 }
