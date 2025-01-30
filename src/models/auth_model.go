@@ -1,31 +1,34 @@
 package models
 
+type UUID string
+
 type AuthDTO struct {
-	Id         int64
-	LookupHash string
-	Password   string
+	UserId   UUID
+	AppId    UUID
+	Password string
 }
 
 type AuthDTOUpdate struct {
-	Id          int64
-	LookupHash  string
+	UserId      UUID
+	AppId       UUID
 	OldPassword string
 	NewPassword string
 }
 
 type CredentialsDTO struct {
-	LookupHash string
-	Password   string
+	UserId   UUID
+	AppId    UUID
+	Password string
 }
 
 type CredentialsDTOUpdate struct {
-	LookupHash  string
+	UserId	   	UUID
 	OldPassword string
 	NewPassword string
 }
 
 type AuthResponse struct {
-	Id    int64
-	Token string
-	Error string
+	UserId UUID
+	Token	 string
+	Error  string
 }
