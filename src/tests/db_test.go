@@ -3,12 +3,12 @@ package tests
 import (
 	"simple-micro-auth/src/cert"
 	m "simple-micro-auth/src/models"
-	s "simple-micro-auth/src/services"
+	sdb "simple-micro-auth/src/services/db"
 	"testing"
 )
 
 var (
-	db = s.NewDBHandler()
+	db = sdb.NewDBHandler()
 )
 
 const (

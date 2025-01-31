@@ -9,12 +9,13 @@ import (
 	c "simple-micro-auth/src/configs"
 	m "simple-micro-auth/src/models"
 	pb "simple-micro-auth/src/proto"
+	sdb "simple-micro-auth/src/services/db"
 	"strings"
 	"time"
 )
 
 var (
-	db           = NewDBHandler()
+	db           = sdb.NewDBHandler()
 	tokenHandler = NewTokenHandler()
 )
 

@@ -1,27 +1,35 @@
-package services
+//go:build db_handler_gorm
+
+package services_db
 
 import (
-	"database/sql"
+	"embed"
 	"fmt"
 	"log"
 	c "simple-micro-auth/src/configs"
 	m "simple-micro-auth/src/models"
 
+	"github.com/google/uuid"
+	"github.com/pressly/goose/v3"
 	"golang.org/x/crypto/bcrypt"
-
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-type dbHandler interface {
-	CreateCredentials(auth m.CredentialsDTO) error
-	UpdateCredentials(auth m.CredentialsDTOUpdate) error
-	DeleteCredentials(userId m.UUID) error
-	VerifyCredentials(credentials m.CredentialsDTO) error
-	FlushDB() error
+type dbHandlerImpl struct {
+	db *gorm.DB
 }
 
-type dbHandlerImpl struct {
-	db *sql.DB
+//go:embed migrations/*.sql
+var embedMigrations embed.FS
+
+type AuthModel struct {
+	UserId       uuid.UUID `gorm:"type:uuid;primary_key"`
+	PasswordHash string
+}
+
+func (AuthModel) TableName() string {
+	return "auth"
 }
 
 func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
@@ -33,8 +41,19 @@ func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 		return err
 	}
 
-	_, err = handler.db.Exec(`INSERT INTO auth(user_id, password_hash)
-	VALUES($1, $2)`, auth.UserId, passwordHash)
+	typedUserId, err := uuid.Parse(string(auth.UserId))
+	if err != nil {
+		fmt.Println(err)
+		err = fmt.Errorf("error parsing user id to uuid")
+		return err
+	}
+
+	authEntry := AuthModel{
+		UserId:       typedUserId,
+		PasswordHash: string(passwordHash),
+	}
+
+	err = handler.db.Create(&authEntry).Error
 
 	if err != nil {
 		if err.Error() != `pq: duplicate key value violates unique constraint "auth_pkey"` {
@@ -67,7 +86,19 @@ func (handler *dbHandlerImpl) UpdateCredentials(auth m.CredentialsDTOUpdate) err
 		return err
 	}
 
-	_, err = handler.db.Exec(`UPDATE auth SET password_hash = $1 WHERE user_id = $2`, passwordHash, auth.UserId)
+	typedUserId, err := uuid.Parse(string(auth.UserId))
+	if err != nil {
+		fmt.Println(err)
+		err = fmt.Errorf("error parsing user id to uuid")
+		return err
+	}
+
+	authEntry := AuthModel{
+		UserId:       typedUserId,
+		PasswordHash: string(passwordHash),
+	}
+
+	err = handler.db.Model(&authEntry).Update("PasswordHash", authEntry.PasswordHash).Error
 	if err != nil {
 		fmt.Println(err)
 		err = fmt.Errorf("error updating password_hash in db while this user_id was found: %s", auth.UserId)
@@ -79,7 +110,13 @@ func (handler *dbHandlerImpl) UpdateCredentials(auth m.CredentialsDTOUpdate) err
 
 func (handler *dbHandlerImpl) DeleteCredentials(userId m.UUID) error {
 
-	_, err := handler.db.Exec(`DELETE FROM auth WHERE user_id = $1`, userId)
+	typedUserId, err := uuid.Parse(string(userId))
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err = handler.db.Delete(&AuthModel{}, typedUserId).Error
 	if err != nil {
 		log.Println(err)
 		err = fmt.Errorf("error deleting credentials from db")
@@ -91,25 +128,20 @@ func (handler *dbHandlerImpl) DeleteCredentials(userId m.UUID) error {
 
 func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) error {
 
-	storedPasswordHashRow, err := handler.db.Query(`SELECT password_hash FROM auth WHERE user_id = $1`, credentials.UserId)
+	typedUserId, err := uuid.Parse(string(credentials.UserId))
+	if err != nil {
+		fmt.Println(err)
+		err = fmt.Errorf("error parsing user id to uuid")
+		return err
+	}
+
+	var storedPasswordHash string
+	err = handler.db.Model(&AuthModel{}).Select("password_hash").Where("user_id = ?", typedUserId).Find(&storedPasswordHash).Error
 	if err != nil {
 		fmt.Println(err)
 		err = fmt.Errorf("error reading password_hash from db")
 		return err
 	}
-	defer storedPasswordHashRow.Close()
-
-	var storedPasswordHash string
-
-	if storedPasswordHashRow.Next() {
-		err = storedPasswordHashRow.Scan(&storedPasswordHash)
-		if err != nil {
-			fmt.Println(err)
-			err = fmt.Errorf("error reading password_hash from db")
-			return err
-		}
-	}
-
 	if storedPasswordHash == "" {
 		err = fmt.Errorf("lookupHash not found")
 		return err
@@ -124,7 +156,7 @@ func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) er
 }
 
 func (handler *dbHandlerImpl) FlushDB() error {
-	_, err := handler.db.Exec(`DELETE FROM auth`)
+	err := handler.db.Exec(`DELETE FROM auth`).Error
 
 	if err != nil {
 		log.Println(err)
@@ -149,28 +181,33 @@ func NewDBHandler() dbHandler {
 		postgresConfig.SslMode,
 	)
 
-	db, err := sql.Open("postgres", postgresqlDbInfo)
+	db, err := gorm.Open(postgres.Open(postgresqlDbInfo), &gorm.Config{})
 	if err != nil {
 		log.Fatal("error opening db")
 		log.Fatal("db connection string: ", postgresqlDbInfo)
 		panic(err)
 	}
 
-	err = db.Ping()
+	goose.SetBaseFS(embedMigrations)
+
+	err = goose.SetDialect("postgres")
 	if err != nil {
-		log.Fatal("error pinging db")
+		log.Printf("error creating migrate instance: %v", err)
 		panic(err)
 	}
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS auth (
-		user_id UUID NOT NULL PRIMARY KEY,
-		password_hash varchar(100) NOT NULL
-	)`)
+	nativeDB, err := db.DB()
 	if err != nil {
-		log.Fatal("error creating auth table")
+		log.Printf("error getting native db instance: %v", err)
+		panic(err)
+	}
+
+	err = goose.Up(nativeDB, "migrations")
+	if err != nil {
+		log.Fatal("could not run migrations")
 		panic(err)
 	} else {
-		log.Println("auth table exists or created")
+		log.Println("migrations ran successfully")
 	}
 
 	return &dbHandlerImpl{db}
