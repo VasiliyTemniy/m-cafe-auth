@@ -15,7 +15,7 @@ import (
 type dbHandler interface {
 	CreateCredentials(auth m.CredentialsDTO) error
 	UpdateCredentials(auth m.CredentialsDTOUpdate) error
-	DeleteCredentials(userId m.UUID, appId m.UUID) error
+	DeleteCredentials(userId m.UUID) error
 	VerifyCredentials(credentials m.CredentialsDTO) error
 	FlushDB() error
 }
@@ -33,8 +33,8 @@ func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 		return err
 	}
 
-	_, err = handler.db.Exec(`INSERT INTO auth(user_id, app_id, password_hash)
-	VALUES($1, $2, $3)`, auth.UserId, auth.AppId, passwordHash)
+	_, err = handler.db.Exec(`INSERT INTO auth(user_id, password_hash)
+	VALUES($1, $2)`, auth.UserId, passwordHash)
 
 	if err != nil {
 		if err.Error() != `pq: duplicate key value violates unique constraint "auth_pkey"` {
@@ -51,9 +51,8 @@ func (handler *dbHandlerImpl) CreateCredentials(auth m.CredentialsDTO) error {
 func (handler *dbHandlerImpl) UpdateCredentials(auth m.CredentialsDTOUpdate) error {
 
 	credentialsDTOToCompare := m.CredentialsDTO{
-		UserId:     auth.UserId,
-		AppId:      auth.AppId,
-		Password:   auth.OldPassword,
+		UserId:   auth.UserId,
+		Password: auth.OldPassword,
 	}
 
 	err := handler.VerifyCredentials(credentialsDTOToCompare)
@@ -68,19 +67,19 @@ func (handler *dbHandlerImpl) UpdateCredentials(auth m.CredentialsDTOUpdate) err
 		return err
 	}
 
-	_, err = handler.db.Exec(`UPDATE auth SET password_hash = $1 WHERE user_id = $2 AND app_id = $3`, passwordHash, auth.UserId, auth.AppId)
+	_, err = handler.db.Exec(`UPDATE auth SET password_hash = $1 WHERE user_id = $2`, passwordHash, auth.UserId)
 	if err != nil {
 		fmt.Println(err)
-		err = fmt.Errorf("error updating password_hash in db while this user_id and app_id were found: %s and %s", auth.UserId, auth.AppId)
+		err = fmt.Errorf("error updating password_hash in db while this user_id was found: %s", auth.UserId)
 		return err
 	}
 
 	return err
 }
 
-func (handler *dbHandlerImpl) DeleteCredentials(userId m.UUID, appId m.UUID) error {
+func (handler *dbHandlerImpl) DeleteCredentials(userId m.UUID) error {
 
-	_, err := handler.db.Exec(`DELETE FROM auth WHERE user_id = $1 AND app_id = $2`, userId, appId)
+	_, err := handler.db.Exec(`DELETE FROM auth WHERE user_id = $1`, userId)
 	if err != nil {
 		log.Println(err)
 		err = fmt.Errorf("error deleting credentials from db")
@@ -92,7 +91,7 @@ func (handler *dbHandlerImpl) DeleteCredentials(userId m.UUID, appId m.UUID) err
 
 func (handler *dbHandlerImpl) VerifyCredentials(credentials m.CredentialsDTO) error {
 
-	storedPasswordHashRow, err := handler.db.Query(`SELECT password_hash FROM auth WHERE user_id = $1 AND app_id = $2`, credentials.UserId, credentials.AppId)
+	storedPasswordHashRow, err := handler.db.Query(`SELECT password_hash FROM auth WHERE user_id = $1`, credentials.UserId)
 	if err != nil {
 		fmt.Println(err)
 		err = fmt.Errorf("error reading password_hash from db")
@@ -164,10 +163,8 @@ func NewDBHandler() dbHandler {
 	}
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS auth (
-		user_id UUID NOT NULL,
-		app_id UUID NOT NULL,
-		password_hash varchar(100) NOT NULL,
-		CONSTRAINT auth_user_id_app_id_pkey PRIMARY KEY (user_id, app_id)
+		user_id UUID NOT NULL PRIMARY KEY,
+		password_hash varchar(100) NOT NULL
 	)`)
 	if err != nil {
 		log.Fatal("error creating auth table")

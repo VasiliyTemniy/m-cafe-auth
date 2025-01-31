@@ -26,7 +26,6 @@ func TestCreateCredentials(t *testing.T) {
 
 	err := db.CreateCredentials(m.CredentialsDTO{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password,
 	})
 
@@ -40,7 +39,6 @@ func TestVerifyCredentials(t *testing.T) {
 
 	err := db.CreateCredentials(m.CredentialsDTO{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password,
 	})
 
@@ -51,7 +49,6 @@ func TestVerifyCredentials(t *testing.T) {
 	// Test case 1: Valid credentials
 	err = db.VerifyCredentials(m.CredentialsDTO{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password,
 	})
 
@@ -62,7 +59,6 @@ func TestVerifyCredentials(t *testing.T) {
 	// Test case 2: Invalid credentials
 	err = db.VerifyCredentials(m.CredentialsDTO{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password + "1",
 	})
 
@@ -76,7 +72,6 @@ func TestUpdateCredentials(t *testing.T) {
 
 	err := db.CreateCredentials(m.CredentialsDTO{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password,
 	})
 
@@ -87,7 +82,6 @@ func TestUpdateCredentials(t *testing.T) {
 	// Test case 1: Valid credentials
 	err = db.UpdateCredentials(m.CredentialsDTOUpdate{
 		UserId:      userId,
-		AppId:       appId,
 		OldPassword: password,
 		NewPassword: password + "1",
 	})
@@ -99,7 +93,6 @@ func TestUpdateCredentials(t *testing.T) {
 	// Test case 2: Invalid credentials
 	err = db.UpdateCredentials(m.CredentialsDTOUpdate{
 		UserId:      userId,
-		AppId:       appId,
 		OldPassword: "something_totally_different",
 		NewPassword: "test123",
 	})

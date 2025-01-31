@@ -24,9 +24,8 @@ type AuthServiceServer struct {
 
 func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
 	newCredentialsDTO := m.CredentialsDTO{
-		UserId:     m.UUID(req.UserId),
-		AppId:      m.UUID(req.AppId),
-		Password:   req.Password,
+		UserId:   m.UUID(req.UserId),
+		Password: req.Password,
 	}
 	err := db.CreateCredentials(newCredentialsDTO)
 	if err != nil {
@@ -39,7 +38,7 @@ func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRe
 	}
 
 	token, err := tokenHandler.CreateToken(
-	  m.UUID(req.UserId),
+		m.UUID(req.UserId),
 		time.Now().Unix(),
 		time.Now().Add(tokenTtl).Unix(),
 		rand.Int63(),
@@ -55,7 +54,6 @@ func (service *AuthServiceServer) CreateAuth(ctx context.Context, req *pb.AuthRe
 func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.UpdateAuthRequest) (*pb.AuthResponse, error) {
 	updCredentialsDTO := m.CredentialsDTOUpdate{
 		UserId:      m.UUID(req.UserId),
-		AppId:       m.UUID(req.AppId),
 		OldPassword: req.OldPassword,
 		NewPassword: req.NewPassword,
 	}
@@ -84,7 +82,7 @@ func (service *AuthServiceServer) UpdateAuth(ctx context.Context, req *pb.Update
 }
 
 func (service *AuthServiceServer) DeleteAuth(ctx context.Context, req *pb.DeleteAuthRequest) (*pb.DeleteAuthResponse, error) {
-	err := db.DeleteCredentials(m.UUID(req.UserId), m.UUID(req.AppId))
+	err := db.DeleteCredentials(m.UUID(req.UserId))
 	if err != nil {
 		return &pb.DeleteAuthResponse{Error: strings.ToValidUTF8(err.Error(), "UTF-8_BUGFIX")}, nil
 	}
@@ -94,9 +92,8 @@ func (service *AuthServiceServer) DeleteAuth(ctx context.Context, req *pb.Delete
 
 func (service *AuthServiceServer) GrantAuth(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
 	compareCredentialsDT := m.CredentialsDTO{
-		UserId:     m.UUID(req.UserId),
-		AppId:      m.UUID(req.AppId),
-		Password:   req.Password,
+		UserId:   m.UUID(req.UserId),
+		Password: req.Password,
 	}
 
 	err := db.VerifyCredentials(compareCredentialsDT)
@@ -125,9 +122,8 @@ func (service *AuthServiceServer) GrantAuth(ctx context.Context, req *pb.AuthReq
 
 func (service *AuthServiceServer) VerifyCredentials(ctx context.Context, req *pb.CredentialsRequest) (*pb.VerifyResponse, error) {
 	compareCredentialsDT := m.CredentialsDTO{
-		UserId:     m.UUID(req.UserId),
-		AppId:      m.UUID(req.AppId),
-		Password:   req.Password,
+		UserId:   m.UUID(req.UserId),
+		Password: req.Password,
 	}
 
 	err := db.VerifyCredentials(compareCredentialsDT)

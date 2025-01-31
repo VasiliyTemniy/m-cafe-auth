@@ -50,7 +50,6 @@ func TestMain(t *testing.T) {
 	// Test 2: Create request
 	newAuthReq := &pb.AuthRequest{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password,
 	}
 
@@ -70,7 +69,6 @@ func TestMain(t *testing.T) {
 	// Test 3: Update request
 	updateAuthReq := &pb.UpdateAuthRequest{
 		UserId:      userId,
-		AppId:       appId,
 		OldPassword: password,
 		NewPassword: password + "1",
 	}
@@ -91,7 +89,6 @@ func TestMain(t *testing.T) {
 	// Test 4: Verify request
 	correctCredentials := &pb.CredentialsRequest{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password + "1",
 	}
 
@@ -110,7 +107,6 @@ func TestMain(t *testing.T) {
 
 	incorrectCredentials := &pb.CredentialsRequest{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password + "2",
 	}
 
@@ -130,7 +126,6 @@ func TestMain(t *testing.T) {
 	// Test 5: Grant auth
 	grantAuthReq := &pb.AuthRequest{
 		UserId:   userId,
-		AppId:    appId,
 		Password: password + "1",
 	}
 
@@ -199,7 +194,6 @@ func TestMain(t *testing.T) {
 	// Test 8: Delete auth
 	deleteAuthReq := &pb.DeleteAuthRequest{
 		UserId: userId,
-		AppId:  appId,
 	}
 
 	deleteAuthRes, err := client.DeleteAuth(context.Background(), deleteAuthReq)

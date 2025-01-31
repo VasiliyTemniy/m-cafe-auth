@@ -20,28 +20,24 @@ service AuthService {
 
 message AuthRequest {
   string user_id = 1;
-  string app_id = 2;
-  string password = 3;
-  string ttl = 4;
+  string password = 2;
+  string ttl = 3;
 }
 
 message UpdateAuthRequest {
   string user_id = 1;
-  string app_id = 2;
-  string old_password = 3;
-  string new_password = 4;
-  string ttl = 5;
+  string old_password = 2;
+  string new_password = 3;
+  string ttl = 4;
 }
 
 message CredentialsRequest {
   string user_id = 1;
-  string app_id = 2;
-  string password = 3;
+  string password = 2;
 }
 
 message DeleteAuthRequest {
   string user_id = 1;
-  string app_id = 2;
 }
 
 message VerifyTokenRequest {
