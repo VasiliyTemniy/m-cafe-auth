@@ -175,7 +175,7 @@ func RunServer() {
 	err = grpcServer.Serve(lis)
 
 	if err != nil {
-		log.Fatalf("Error strating server: %v", err)
+		log.Fatalf("Error starting server: %v", err)
 	}
 }
 
